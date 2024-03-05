@@ -24,7 +24,6 @@ end
 	YOUR ALU FUNCTIONALITY IMPLEMENTATION...
 */
   always @(*) begin
-        OverflowFlag = 0;
         case(FuncCode)
             `FUNC_ADD: begin
   				C = A + B;
@@ -54,3 +53,4 @@ end
         endcase
   end
 endmodule
+
