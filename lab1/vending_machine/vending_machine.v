@@ -80,7 +80,7 @@ module vending_machine (
 										.output_total(output_total),
 										.return_total(return_total),
 										.current_total_nxt(current_total_nxt),
-										.wait_time(wait_time),
+										// .wait_time(wait_time),
 										.o_return_coin(o_return_coin),
 										.o_available_item(o_available_item),
 										.o_output_item(o_output_item));

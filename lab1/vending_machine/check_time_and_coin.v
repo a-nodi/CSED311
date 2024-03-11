@@ -24,8 +24,8 @@ module check_time_and_coin(i_input_coin,
 
 	// initiate values
 	initial begin
-		wait_time <= `kWaitTime;	
-		o_return_coin <= 3'b000;
+		wait_time = `kWaitTime;	
+		o_return_coin = 3'b000;
 	end
 
 	// update coin return time
@@ -67,11 +67,10 @@ module check_time_and_coin(i_input_coin,
 		if (!reset_n) begin // Reset time
 			wait_time <= `kWaitTime;
 		end
-		else if (i_trigger_return == 1) begin // If return, reset time
-			wait_time <= 0;
-		end
-		else if (wait_time > 0) begin // If time is ticking, decrease time
-			wait_time <= wait_time - 1;
+		else begin
+			if (wait_time > 0) begin // If time is ticking, decrease time
+				wait_time <= wait_time - 1;
+			end
 		end
 
 	end
