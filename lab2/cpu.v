@@ -108,7 +108,7 @@ module cpu(input reset,                     // positive reset signal
 
   // ---------- Immediate Generator ----------
   immediate_generator imm_gen(
-    .part_of_inst(instruction[31:20]),  // input
+    .part_of_inst({instruction[31:20], instruction[11:0]}),  // input
     .imm_gen_out(imm_gen_out)    // output
   );
 
