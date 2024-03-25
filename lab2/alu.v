@@ -4,7 +4,7 @@ module alu(
     alu_in_2,
     alu_result,
     alu_bcond
-)
+);
 
     input [4:0] alu_op;
     input [31:0] alu_in_1;
@@ -12,7 +12,7 @@ module alu(
     output reg [31:0] alu_result;
     output reg alu_bcond;
 
-    always (*) begin
+    always @(*) begin
         alu_result = 0;
         alu_bcond = 0;
     
@@ -88,3 +88,4 @@ module alu(
             
         endcase
     end
+endmodule

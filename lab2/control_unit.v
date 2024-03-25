@@ -1,3 +1,5 @@
+  `include "opcodes.v"
+  
   module control_unit (
     input [6:0] part_of_inst,  // input
     output reg is_jal,        // JAL
@@ -59,5 +61,8 @@
         end
         `ECALL: begin // System Call
             is_ecall = 1;
-
+        end
+      endcase
     end
+endmodule
+

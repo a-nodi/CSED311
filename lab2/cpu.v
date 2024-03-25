@@ -110,7 +110,7 @@ module cpu(input reset,                     // positive reset signal
 
   // ---------- ALU Control Unit ----------
   alu_control_unit alu_ctrl_unit (
-    .part_of_inst({instruction[30], instruction[14:12], instruction[6:0]}),  // input
+    .part_of_inst(instruction),  // input
     .alu_op(alu_op)         // output
   );
 
