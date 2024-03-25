@@ -39,6 +39,9 @@ module cpu(input reset,                     // positive reset signal
 
   /***** Register declarations *****/
   reg [31:0] next_pc;         // 다음 PC address
+  reg _is_ecall;
+  reg _is_halted;
+  reg [31:0] GPR_x17;                // x17의 값
 
   // ---------- Update program counter ----------
   // PC must be updated on the rising edge (positive edge) of the clock.
@@ -81,6 +84,7 @@ module cpu(input reset,                     // positive reset signal
     .write_enable (write_enable), // input
     .rs1_dout (rs1_dout),     // output
     .rs2_dout (rs2_dout),     // output
+    .GPR_x17 (GPR_x17),       // output
     .print_reg (print_reg)  //DO NOT TOUCH THIS
   );
 
@@ -110,7 +114,7 @@ module cpu(input reset,                     // positive reset signal
 
   // ---------- ALU Control Unit ----------
   alu_control_unit alu_ctrl_unit (
-    .part_of_inst(instruction),  // input
+    .part_of_inst({instruction[31:25], instruction[14:12], instruction[6:0]}),  // input
     .alu_op(alu_op)         // output
   );
 
@@ -133,4 +137,17 @@ module cpu(input reset,                     // positive reset signal
     .mem_write (mem_write),  // input
     .dout (mem_data)        // output
   );
+
+  assign is_halted = _is_halted;  // ecall이 나오면 is_halted가 1이 되어 시뮬레이션 종료
+
+  always @(*) begin
+    _is_ecall = is_ecall;
+    if (_is_ecall == 1'b1 && GPR_x17 == 10) begin
+      _is_halted =1'b1;
+    end
+    else begin
+      _is_halted = 1'b0;
+    end
+  end
+
 endmodule

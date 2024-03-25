@@ -7,6 +7,7 @@ module register_file(input	reset,
                      input write_enable,       // RegWrite signal
                      output [31:0] rs1_dout,   // output of rs 1
                      output [31:0] rs2_dout,   // output of rs 2
+                     output [31:0] GPR_x17,    // output of x17
                      output [31:0] print_reg [0:31]);
   integer i;
   // Register file
@@ -18,6 +19,7 @@ module register_file(input	reset,
   // Asynchronously read register file
   assign rs1_dout = (rs1 != 0) ? rf[rs1] : 32'b0;
   assign rs2_dout = (rs2 != 0) ? rf[rs2] : 32'b0;
+  assign GPR_x17 = rf[17];
 
   // Synchronously write data to the register file
   always @(posedge clk) begin

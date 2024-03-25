@@ -4,15 +4,15 @@ module alu_control_unit (
     part_of_inst,
     alu_op
   );
-    input [31:0] part_of_inst;
+    input [16:0] part_of_inst;
     output reg [4:0] alu_op;
 
     wire [6:0] funct7;
     wire [2:0] funct3;
     wire [6:0] opcode;
 
-    assign funct7 = part_of_inst[31:25];
-    assign funct3 = part_of_inst[14:12];
+    assign funct7 = part_of_inst[16:10];
+    assign funct3 = part_of_inst[9:7];
     assign opcode = part_of_inst[6:0];
 
     always @(*) begin        
