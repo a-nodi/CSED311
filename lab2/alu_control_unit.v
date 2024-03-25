@@ -42,18 +42,18 @@ module alu_control_unit (
         end
 
         if (opcode == `ARITHMETIC_IMM) begin
-            if (funct7 == `FUNCT7_OTHERS) begin
-                case(funct3)
-                    `FUNCT3_ADD: alu_op = 5'b00011;
-                    `FUNCT3_AND: alu_op = 5'b01001;
-                    `FUNCT3_OR: alu_op = 5'b01010;
-                    `FUNCT3_XOR: alu_op = 5'b01101;
-                    `FUNCT3_SLL: alu_op = 5'b01111;
-                    `FUNCT3_SRL: alu_op = 5'b10000;
-                    default: begin
-                    end
-                endcase
-            end
+
+            case(funct3)
+                `FUNCT3_ADD: alu_op = 5'b00011;
+                `FUNCT3_AND: alu_op = 5'b01001;
+                `FUNCT3_OR: alu_op = 5'b01010;
+                `FUNCT3_XOR: alu_op = 5'b01101;
+                `FUNCT3_SLL: alu_op = 5'b01111;
+                `FUNCT3_SRL: alu_op = 5'b10000;
+                default: begin
+                end
+            endcase
+        
         end
 
         if (opcode == `LOAD) begin

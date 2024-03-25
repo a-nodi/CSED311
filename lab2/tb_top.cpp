@@ -31,7 +31,7 @@ void next_cycle(Vtop *dut, VerilatedVcdC *m_trace)
 int main(int argc, char **argv, char **env)
 {
     // TO DO : CHANGE "filename" TO PROVIDED "answer_*.txt" PATH
-    string filename = "/home/colin/single-cycle_cpu/student_tb/answer_basic.txt";
+    string filename = "/home/leeyoloc/lab2/student_tb/answer_loop.txt";
     ifstream file(filename);
     stringstream ss;
     string reg_hex;

@@ -32,7 +32,7 @@ module instruction_memory #(parameter MEM_DEPTH = 1024) (input reset,
         // DO NOT TOUCH COMMENT ABOVE
 
       // Provide path of the file including instructions with binary format
-      $readmemh("/home/colin/single-cycle_cpu/student_tb/basic_mem.txt", mem);
+      $readmemh("/home/leeyoloc/lab2/student_tb/basic_loop.txt", mem);
     end
   end
 
