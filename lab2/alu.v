@@ -85,7 +85,8 @@ module alu(
             
             5'b10110: // BGE
                 alu_bcond = alu_in_1 >= alu_in_2;
-            
+            default: begin
+            end
         endcase
     end
 endmodule

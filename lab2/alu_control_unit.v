@@ -27,12 +27,16 @@ module alu_control_unit (
                     `FUNCT3_XOR: alu_op = 5'b01101;
                     `FUNCT3_SLL: alu_op = 5'b01111;
                     `FUNCT3_SRL: alu_op = 5'b10000;
+                    default: begin
+                    end
                 endcase
             end
 
             if (funct7 == `FUNCT7_SUB) begin
                 case (funct3)
                     `FUNCT3_SUB: alu_op = 5'b00100;
+                    default: begin
+                    end
                 endcase
             end
         end
@@ -46,6 +50,8 @@ module alu_control_unit (
                     `FUNCT3_XOR: alu_op = 5'b01101;
                     `FUNCT3_SLL: alu_op = 5'b01111;
                     `FUNCT3_SRL: alu_op = 5'b10000;
+                    default: begin
+                    end
                 endcase
             end
         end
@@ -53,12 +59,16 @@ module alu_control_unit (
         if (opcode == `LOAD) begin
             case(funct3)
                 `FUNCT3_LW: alu_op = 5'b00011;
+                default: begin
+                end
             endcase
         end
 
         if (opcode == `STORE) begin
             case(funct3)
                 `FUNCT3_SW: alu_op = 5'b00011;
+                default: begin
+                end
             endcase
         end
 
@@ -68,6 +78,8 @@ module alu_control_unit (
                 `FUNCT3_BNE: alu_op = 5'b10100;
                 `FUNCT3_BLT: alu_op = 5'b10101;
                 `FUNCT3_BGE: alu_op = 5'b10110;
+                default: begin
+                end
             endcase
         end
 

@@ -62,6 +62,8 @@
         `ECALL: begin // System Call
             is_ecall = 1;
         end
+        default: begin
+        end
       endcase
     end
 endmodule

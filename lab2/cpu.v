@@ -15,7 +15,6 @@ module cpu(input reset,                     // positive reset signal
   /***** Wire declarations *****/
   // PC-instruction memory 간 연결
   wire [31:0] imem_addr;       // PC의 현재 address
-  wire [31:0] next_pc;         // 다음 PC address
   wire [31:0] instruction;     // instruction memory에서 읽은 instruction
   wire PCSrc1, PCSrc2;         // next_pc 값 할당하기 위한 signal
 
@@ -28,7 +27,7 @@ module cpu(input reset,                     // positive reset signal
   wire is_jal, is_jalr, branch, mem_read, mem_to_reg, mem_write, alu_src, write_enable, pc_to_reg, is_ecall;
 
   // alu, alu_contorl_unit 연결
-  wire [3:0] alu_op;           // ALU 연산 유형
+  wire [4:0] alu_op;           // ALU 연산 유형
   wire [31:0] alu_result;      // ALU 연산 결과
   wire alu_bcond;              // ALU 분기 조건 결과
 
@@ -39,6 +38,7 @@ module cpu(input reset,                     // positive reset signal
   wire [31:0] mem_data;        // data_memory에서 읽은 data
 
   /***** Register declarations *****/
+  reg [31:0] next_pc;         // 다음 PC address
 
   // ---------- Update program counter ----------
   // PC must be updated on the rising edge (positive edge) of the clock.
@@ -54,11 +54,11 @@ module cpu(input reset,                     // positive reset signal
 
   always @(*) begin  //next_pc에 값 할당
     if (PCSrc1) begin
-        next_pc = pc + imm_gen_out; // PCSrc1이 1일 경우
+        next_pc = imem_addr + imm_gen_out; // PCSrc1이 1일 경우
     end else if (PCSrc2) begin
         next_pc = alu_result; // PCSrc2가 1일 경우
     end else begin
-        next_pc = pc + 4;
+        next_pc = imem_addr + 4;
     end
   end
   
@@ -78,7 +78,7 @@ module cpu(input reset,                     // positive reset signal
     .rs2 (instruction[24:20]),          // input
     .rd (instruction[11:7]),           // input
     .rd_din (rd_din),       // input
-    .write_enable (reg_write), // input
+    .write_enable (write_enable), // input
     .rs1_dout (rs1_dout),     // output
     .rs2_dout (rs2_dout),     // output
     .print_reg (print_reg)  //DO NOT TOUCH THIS
