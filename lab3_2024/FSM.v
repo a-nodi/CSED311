@@ -6,7 +6,7 @@ module FSM(
     alu_bcond,
     current_state,
     next_state
-)
+);
 
     input [6:0] part_of_inst;
     input alu_bcond;

@@ -1,6 +1,6 @@
 `include "opcodes.v"
 
-module alu_control_unit (
+module ALUControlUnit (
     part_of_inst,
     alu_ctrl_op,
     alu_op
@@ -97,6 +97,6 @@ module alu_control_unit (
             else if (opcode == `JAL) begin
                 alu_op = 5'b00011;
             end
-        emd
+        end
     end
 endmodule

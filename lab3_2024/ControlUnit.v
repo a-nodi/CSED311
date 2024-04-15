@@ -21,7 +21,7 @@ module ControlUnit(
     mem_write,
     mem_to_reg,
     is_ecall
-)
+);
     input [6:0] part_of_inst;
     input alu_bcond;
     input clk;
@@ -223,7 +223,7 @@ module ControlUnit(
                     alu_src_a = 1'b1; // 1st ALU input comes from register file
                     alu_src_b = 2'b00; // 2nd ALU input comes from register file
                     alu_op = 1'b1; // ALU works as ALU (ALUOut <- A op B)
-                    pc_write_not_cond = 1b`1; // Enable PC write(branch not taken)
+                    pc_write_not_cond = 1'b1; // Enable PC write(branch not taken)
                     pc_source = 1'b1; // PC <- ALUOUT
                 end
             end
