@@ -9,6 +9,7 @@
 // 4. `include files if required
 `include "Mux2to1.v"
 `include "Mux4to1.v"
+`include "ALU.v"
 
 module cpu(input reset,       // positive reset signal
            input clk,         // clock signal
@@ -23,7 +24,7 @@ module cpu(input reset,       // positive reset signal
   wire alu_bcond;
   wire [31:0] addr;  // Memory address
   wire i_or_d;       // Memory address selection signal
-  wire [4:0] rs1;    // Source register 1
+  reg [4:0] rs1;    // Source register 1
   wire [4:0] rs2;    // Source register 2
   wire [31:0] rs1_dout;
   wire [31:0] rs2_dout;
@@ -121,12 +122,13 @@ module cpu(input reset,       // positive reset signal
     .out(next_pc)      
   );
 
-  Mux2to1 reg_rs1_mux(
-    .in0(IR[19:15]),
-    .in1(5'b10001),
-    .sel(is_ecall),
-    .out(rs1)
-  );
+  always @(*) begin
+        if (is_ecall) begin
+            rs1 = 5'b10001;
+        end else begin
+            rs1 = IR[19:15]; 
+        end
+  end
   
 
   // ---------- Register File ----------
