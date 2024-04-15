@@ -159,7 +159,7 @@ module cpu(input reset,       // positive reset signal
     .pc_source(pc_source),
     .pc_write(pc_write),
     .pc_write_not_cond(pc_write_not_cond),
-    .alu_op(alu_op),
+    .alu_op(alu_ctrl_op),
     .alu_src_a(alu_src_a),
     .alu_src_b(alu_src_b),
     .reg_write(reg_write),
@@ -178,12 +178,13 @@ module cpu(input reset,       // positive reset signal
   // ---------- ALU Control Unit ----------
   ALUControlUnit alu_ctrl_unit(
     .part_of_inst({IR[31:25], IR[14:12], IR[6:0]}),  // input
-    .alu_op()         // output
+    .alu_ctrl_op(alu_ctrl_op),
+    .alu_op(alu_op)         // output
   );
 
   // ---------- ALU ----------
   ALU alu(
-    .alu_op(),      // input
+    .alu_op(alu_op),      // input
     .alu_in_1(alu_in_1),    // input  
     .alu_in_2(alu_in_2),    // input
     .alu_result(alu_result),  // output

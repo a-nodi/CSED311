@@ -6,7 +6,7 @@ module alu_control_unit (
     alu_op
   );
     input [16:0] part_of_inst;
-    input aly_ctrl_op;
+    input alu_ctrl_op;
     output reg [4:0] alu_op;
 
     wire [6:0] funct7;
