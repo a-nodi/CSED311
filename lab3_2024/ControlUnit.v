@@ -69,7 +69,7 @@ module ControlUnit(
         pc_source = 1'b0;
         pc_write = 1'b0;
         pc_write_not_cond = 1'b0;
-        alu_op = 2'b00;
+        alu_op = 1'b0;
         alu_src_a = 1'b0; // Default: PC <- PC + 4
         alu_src_b = 2'b01; // Default: PC <- PC + 4
         reg_write = 1'b0;
@@ -84,7 +84,7 @@ module ControlUnit(
                 pc_source = 1'b0;
                 pc_write = 1'b0;
                 pc_write_not_cond = 1'b0;
-                alu_op = 2'b00;
+                alu_op = 1'b0;
                 alu_src_a = 1'b0;
                 alu_src_b = 2'b01;
                 reg_write = 1'b0;
@@ -105,7 +105,7 @@ module ControlUnit(
                     pc_source = 1'b0;
                     pc_write = 1'b0;
                     pc_write_not_cond = 1'b0;
-                    alu_op = 2'b00;
+                    alu_op = 1'b0;
                     alu_src_a = 1'b0; // Default: PC <- PC + 4
                     alu_src_b = 2'b01; // Default: PC <- PC + 4
                     reg_write = 1'b0;
@@ -121,7 +121,7 @@ module ControlUnit(
                     pc_source = 1'b0;
                     pc_write = 1'b0;
                     pc_write_not_cond = 1'b0;
-                    alu_op = 2'b00;
+                    alu_op = 1'b0;
                     alu_src_a = 1'b0; // Default: PC <- PC + 4
                     alu_src_b = 2'b01; // Default: PC <- PC + 4
                     reg_write = 1'b0;
@@ -254,7 +254,7 @@ module ControlUnit(
                     pc_source = 1'b0;
                     pc_write = 1'b0;
                     pc_write_not_cond = 1'b0;
-                    alu_op = 2'b00;
+                    alu_op = 1'b0;
                     alu_src_a = 1'b0; // Default: PC <- PC + 4
                     alu_src_b = 2'b01; // Default: PC <- PC + 4
                     reg_write = 1'b0;
@@ -271,7 +271,7 @@ module ControlUnit(
                     // Default values
                     ir_write = 1'b0;
                     pc_write_not_cond = 1'b0;
-                    alu_op = 2'b00;
+                    alu_op = 1'b0;
                     reg_write = 1'b0;
                     mem_read = 1'b0;
                     mem_to_reg = 1'b0;

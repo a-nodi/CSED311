@@ -10,8 +10,8 @@ module FSM(
 
     input [6:0] part_of_inst;
     input alu_bcond;
-    input current_state;
-    output reg next_state;
+    input [2:0] current_state;
+    output reg [2:0] next_state;
     
     // Combinational logic for the FSM
     always @(*) begin
