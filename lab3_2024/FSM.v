@@ -22,7 +22,7 @@ module FSM(
 
             `IF2 : begin
                 if (part_of_inst == `ECALL) begin
-                    next_state = `HALT; // HALT
+                    next_state = `IF1; // IF -> IF
                 end
 
                 else if (part_of_inst == `JAL) begin
@@ -82,10 +82,6 @@ module FSM(
 
             `WB : begin
                 next_state = `IF1; // WB -> IF
-            end
-
-            `HALT : begin
-                next_state = `HALT; // hold in HALT
             end
 
             default : begin

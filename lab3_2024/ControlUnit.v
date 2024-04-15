@@ -103,7 +103,7 @@ module ControlUnit(
                     i_or_d = 1'b0;
                     ir_write = 1'b0;
                     pc_source = 1'b0;
-                    pc_write = 1'b0;
+                    pc_write = 1'b1;
                     pc_write_not_cond = 1'b0;
                     alu_op = 1'b0;
                     alu_src_a = 1'b0; // Default: PC <- PC + 4
