@@ -1,6 +1,6 @@
 `include "opcodes.v"
 `include "states.v"
-`inlcude "ControlUnit.v"
+`include "FSM.v"
 
 module ControlUnit(
     part_of_inst,
@@ -20,7 +20,7 @@ module ControlUnit(
     mem_read,
     mem_write,
     mem_to_reg,
-    is_ecall,
+    is_ecall
 )
     input [6:0] part_of_inst;
     input alu_bcond;
