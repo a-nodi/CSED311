@@ -119,7 +119,7 @@ module cpu(input reset,       // positive reset signal
     .in1(5'b10001),
     .signal(is_ecall),
     .result(rs1)
-  )
+  );
   
 
   // ---------- Register File ----------
