@@ -73,7 +73,7 @@ module cpu(input reset,       // positive reset signal
     end
   end
 
-  assign pc_write_enable = pc_write | (pc_write_not_cond & alu_bcond);
+  assign pc_write_enable = pc_write | (pc_write_not_cond & !alu_bcond);
 
   // ---------- Update program counter ----------
   // PC must be updated on the rising edge (positive edge) of the clock.

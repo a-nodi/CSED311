@@ -326,7 +326,7 @@ module ControlUnit(
                     pc_source = 1'b0; // PC <- ALU
                 end
 
-                else if (part_of_inst == `JAL || part_of_inst == `JALR) begin
+                else if (part_of_inst == `JAL) begin
                     // Default values
                     i_or_d = 1'b0;
                     ir_write = 1'b0;
@@ -338,6 +338,24 @@ module ControlUnit(
                     reg_write = 1'b1;
                     mem_to_reg = 1'b0;
                     alu_src_a = 1'b0; // 1st ALU input comes from PC
+                    alu_src_b = 2'b10; // 2nd ALU input comes from immediate generator
+                    alu_op = 1'b0; // ALU works as Adder (ALUOut <- PC + immediate)
+                    pc_write = 1'b1; // Enable PC write (unconditional)
+                    pc_source = 1'b0; // PC <- ALU
+                end
+
+                else if (part_of_inst == `JALR) begin
+                    // Default values
+                    i_or_d = 1'b0;
+                    ir_write = 1'b0;
+                    pc_write_not_cond = 1'b0;
+                    mem_read = 1'b0;
+                    mem_write = 1'b0;
+                    is_ecall = 1'b0;
+                    
+                    reg_write = 1'b1;
+                    mem_to_reg = 1'b0;
+                    alu_src_a = 1'b1; // 1st ALU input comes from REG
                     alu_src_b = 2'b10; // 2nd ALU input comes from immediate generator
                     alu_op = 1'b0; // ALU works as Adder (ALUOut <- PC + immediate)
                     pc_write = 1'b1; // Enable PC write (unconditional)
