@@ -28,6 +28,8 @@ module cpu(input reset,       // positive reset signal
   wire [31:0] rs1_dout;
   wire [31:0] rs2_dout;
   wire [31:0] rd_din;
+  wire alu_src_a;
+  wire [1:0] alu_src_b;
   wire reg_write;
   wire mem_read;
   wire mem_write;
@@ -39,6 +41,7 @@ module cpu(input reset,       // positive reset signal
   wire pc_write;
   wire pc_write_not_cond;
   wire [4:0] alu_op;
+  wire alu_ctrl_op;
   wire [31:0] alu_in_1;
   wire [31:0] alu_in_2;
   wire [31:0] dout; // Data output from memory
@@ -50,6 +53,8 @@ module cpu(input reset,       // positive reset signal
   reg [31:0] B; // Read 2 data register
   reg [31:0] ALUOut; // ALU output register
   // Do not modify and use registers declared above.
+
+  assign is_halted = (is_ecall && rs1_dout == 10)? 1:0;
 
   always @(posedge clk) begin
     if (reset) begin
