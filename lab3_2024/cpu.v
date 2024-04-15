@@ -7,7 +7,8 @@
 // (e.g., port declarations, remove modules, define new modules, ...)
 // 3. You might need to describe combinational logics to drive them into the module (e.g., mux, and, or, ...)
 // 4. `include files if required
-`include "mux.v"
+`include "Mux2to1.v"
+`include "Mux4to1.v"
 
 module cpu(input reset,       // positive reset signal
            input clk,         // clock signal
@@ -30,6 +31,7 @@ module cpu(input reset,       // positive reset signal
   wire reg_write;
   wire mem_read;
   wire mem_write;
+  wire mem_to_reg;
   wire [31:0] imm_gen_out;
   wire is_ecall;
   wire ir_write;
@@ -65,7 +67,7 @@ module cpu(input reset,       // positive reset signal
     end
   end
 
-  assign pc_write_enable = PCWrite | (PCWriteNotCond & bcond);
+  assign pc_write_enable = pc_write | (pc_write_not_cond & alu_bcond);
 
   // ---------- Update program counter ----------
   // PC must be updated on the rising edge (positive edge) of the clock.
@@ -117,8 +119,8 @@ module cpu(input reset,       // positive reset signal
   Mux2to1 reg_rs1_mux(
     .in0(IR[19:15]),
     .in1(5'b10001),
-    .signal(is_ecall),
-    .result(rs1)
+    .sel(is_ecall),
+    .out(rs1)
   );
   
 
