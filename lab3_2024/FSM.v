@@ -33,6 +33,10 @@ module FSM(
                     next_state = `ID; // IF -> ID
                 end
             end
+            
+            `ID : begin
+                next_state = `EX1; // ID -> EX
+            end
 
             `EX1 : begin
                 if (part_of_inst == `BRANCH && alu_bcond) begin // If branch is taken
@@ -51,6 +55,10 @@ module FSM(
                     else if (part_of_inst == `LOAD || part_of_inst == `STORE) begin
                         next_state = `MEM; // MEM -> WB
                     end
+
+                    else begin
+                        next_state = `IF1; // EX -> IF
+                    end
                 end
             end
 
@@ -64,6 +72,10 @@ module FSM(
                 end
 
                 else if (part_of_inst == `STORE) begin
+                    next_state = `IF1; // MEM -> IF
+                end
+
+                else begin
                     next_state = `IF1; // MEM -> IF
                 end
             end
