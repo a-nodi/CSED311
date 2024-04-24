@@ -1,4 +1,4 @@
-module immediate_generator(
+module ImmediateGenerator(
     input [31:0] part_of_inst,
     output reg [31:0] imm_gen_out  // sign-extended 32-bit immediate value
 );

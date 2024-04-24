@@ -1,4 +1,4 @@
-module pc(
+module PC(
     input reset,
     input clk,
     input pc_write;

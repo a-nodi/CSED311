@@ -1,6 +1,6 @@
 `include "opcodes.v"
 
-module alu_control_unit (
+module ALUControlUnitnit (
     part_of_inst,
     alu_op
   );

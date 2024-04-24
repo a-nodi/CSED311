@@ -1,4 +1,4 @@
-module alu(
+module ALU(
     alu_op,
     alu_in_1,
     alu_in_2,
