@@ -17,23 +17,17 @@ module HazardDetectionUnit(
     input EX_MEM_mem_read;
     input is_ecall;
 
+    reg is_load_hazard;
+    reg is_ecall_hazard;
+
     output reg is_stall;
 
     always @(*) begin
-        // Load hazard
-        if ((rs1 == ID_EX_rd || rs2 == ID_EX_rd) && ID_EX_mem_read) begin
-            is_stall = 1;
-        end
         
-        // ecall hazard
-        else if (is_ecall && (ID_EX_rd == 17 || (EX_MEM_rd == 17 && EX_MEM_mem_read))) begin
-            is_stall = 1;            
-        end
-        
-        // No hazard
-        else begin
-            is_stall = 0;
-        end
+        is_load_hazard = (rs1 == ID_EX_rd || rs2 == ID_EX_rd) && ID_EX_mem_read;
+        is_ecall_hazard = is_ecall && (ID_EX_rd == 17 || (EX_MEM_rd == 17 && EX_MEM_mem_read));
+
+        is_stall = is_load_hazard || is_ecall_hazard ? 1 : 0;
     end
 
 endmodule

@@ -22,28 +22,22 @@ module ForwardingUnit(
     output reg [1:0] ForwardA;
     output reg [1:0] ForwardB;
 
-    always @(*) begin
-        // Forward operation of rs1
-        if (ID_EX_rs1 != 0 && ID_EX_rs1 == EX_MEM_rd && EX_MEM_RegWrite) begin // MEM stage
-            ForwardA = `MEM_TO_EX_FORWARD;
-        end
-        else if (ID_EX_rs1 != 0 && ID_EX_rs1 == MEM_WB_rd && MEM_WB_RegWrite) begin // WB state
-            ForwardA = `WB_TO_EX_FORWARD;
-        end
-        else begin
-            ForwardA = `NO_FORWARD;
-        end
+    reg rs1_mem_to_ex_forward;
+    reg rs1_wb_to_ex_forward;
+    reg rs2_mem_to_ex_forward;
+    reg rs2_wb_to_ex_forward;
 
-        // Forward operation of rs2
-        if (ID_EX_rs2 != 0 && ID_EX_rs2 == EX_MEM_rd && EX_MEM_RegWrite) begin // MEM state
-            ForwardB = `MEM_TO_EX_FORWARD;
-        end
-        else if (ID_EX_rs2 != 0 && ID_EX_rs2 == MEM_WB_rd && MEM_WB_RegWrite) begin // WB state
-            ForwardB = `WB_TO_EX_FORWARD;
-        end
-        else begin
-            ForwardB = `NO_FORWARD;
-        end
+    always @(*) begin
+        
+        rs1_mem_to_ex_forward = ID_EX_rs1 != 0 && ID_EX_rs1 == EX_MEM_rd && EX_MEM_RegWrite; // MEM stage
+        rs1_wb_to_ex_forward = ID_EX_rs1 != 0 && ID_EX_rs1 == MEM_WB_rd && MEM_WB_RegWrite; // WB state
+        
+        ForwardA = rs1_mem_to_ex_forward ? `MEM_TO_EX_FORWARD : (rs1_wb_to_ex_forward ? `WB_TO_EX_FORWARD : `NO_FORWARD);
+
+        rs2_mem_to_ex_forward = ID_EX_rs2 != 0 && ID_EX_rs2 == EX_MEM_rd && EX_MEM_RegWrite; // MEM stage
+        rs2_wb_to_ex_forward = ID_EX_rs2 != 0 && ID_EX_rs2 == MEM_WB_rd && MEM_WB_RegWrite; // WB state
+
+        ForwardB = rs2_mem_to_ex_forward ? `MEM_TO_EX_FORWARD : (rs2_wb_to_ex_forward ? `WB_TO_EX_FORWARD : `NO_FORWARD);
 
     end
 

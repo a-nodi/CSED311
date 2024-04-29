@@ -19,14 +19,7 @@ module ForwardingEcallUnit(
     output reg mux_rs2_sel;
     
     always @(*) begin
-        
-        if (EX_MEM_rd == 17 && is_ecall) begin
-            mux_rs1_sel = `RD_DIN_SEL;
-        end
-        else begin
-            mux_rs1_sel = `EX_MEM_ALU_OUT_SEL;
-        end
-        
+        mux_rs1_sel = EX_MEM_rd == 17 && is_ecall ? `RD_DIN_SEL : `EX_MEM_ALU_OUT_SEL;
         mux_rs2_sel = 1'b1;
     end
 endmodule
