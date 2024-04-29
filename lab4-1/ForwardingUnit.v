@@ -15,8 +15,8 @@ module ForwardingUnit(
     input [4:0] MEM_WB_rd;
     input EX_MEM_RegWrite;
     input MEM_WB_RegWrite;
-    output [1:0] ForwardA;
-    output [1:0] ForwardB;
+    output reg [1:0] ForwardA;
+    output reg [1:0] ForwardB;
 
     always @(*) begin
         // Forward operation of rs1

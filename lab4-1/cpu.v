@@ -19,8 +19,8 @@ module cpu(input reset,       // positive reset signal
   //Imem
   wire [31:0] imem_out;
   //Register
-  wire [4:0] rs1;
-  wire [4:0] rs2;
+  reg [4:0] rs1;
+  reg [4:0] rs2;
   wire [4:0] rd;
   wire [31:0] rs1_dout;
   wire [31:0] rs2_dout;  
@@ -66,7 +66,7 @@ module cpu(input reset,       // positive reset signal
   reg [31:0] IF_ID_inst;           // will be used in ID stage
   /***** ID/EX pipeline registers *****/
   // From the control unit
-  reg ID_EX_alu_op;         // will be used in EX stage
+  reg [4:0] ID_EX_alu_op;         // will be used in EX stage
   reg ID_EX_alu_src;        // will be used in EX stage
   reg ID_EX_mem_write;      // will be used in MEM stage
   reg ID_EX_mem_read;       // will be used in MEM stage
@@ -101,8 +101,8 @@ module cpu(input reset,       // positive reset signal
   reg MEM_WB_mem_to_reg;    // will be used in WB stage
   reg MEM_WB_reg_write;     // will be used in WB stage
   // From others
-  reg MEM_WB_mem_to_reg_src_1;
-  reg MEM_WB_mem_to_reg_src_2;
+  reg [31:0] MEM_WB_mem_to_reg_src_1;
+  reg [31:0] MEM_WB_mem_to_reg_src_2;
 
   reg [4:0] MEM_WB_rd;
   reg MEM_WB_is_halted;
@@ -113,12 +113,12 @@ module cpu(input reset,       // positive reset signal
   assign ID_EX_is_halted_temp = is_ecall & (f_rs1_dout==10)&(rs1==17);
   assign is_halted = MEM_WB_is_halted;
 
-  Mux2to1 mux_is_ecall(
-    .in0(IF_ID_inst[19:15]),
-    .in1(5'b10001),
-    .sel(is_ecall),
-    .out(rs1)
-  );
+  always @(is_ecall or IF_ID_inst) begin
+    if (is_ecall)
+        rs1 = 5'b10001;  
+    else
+        rs1 = IF_ID_inst[19:15]; 
+  end
 
   // ---------- Update program counter ----------
   // PC must be updated on the rising edge (positive edge) of the clock.
@@ -126,6 +126,7 @@ module cpu(input reset,       // positive reset signal
     .reset(reset),       // input (Use reset to initialize PC. Initial value must be 0)
     .clk(clk),         // input
     .next_pc(next_pc),     // input
+    .pc_write(!is_stall),
     .current_pc(current_pc)   // output
   );
 
@@ -228,7 +229,7 @@ module cpu(input reset,       // positive reset signal
 
   // ---------- ALU Control Unit ----------
   ALUControlUnit alu_ctrl_unit (
-    .part_of_inst(ID_EX_ALU_ctrl_unit_input),  // input
+    .part_of_inst({ID_EX_ALU_ctrl_unit_input[31:25], ID_EX_ALU_ctrl_unit_input[14:12], ID_EX_ALU_ctrl_unit_input[6:0]}),  // input
     .alu_op(alu_op)         // output
   );
 
@@ -304,7 +305,7 @@ module cpu(input reset,       // positive reset signal
     end
   end
 
-  MUX2to1 Reg_Write_MUX (
+  Mux2to1 Reg_Write_MUX (
     .in0(MEM_WB_mem_to_reg_src_1), 
     .in1(MEM_WB_mem_to_reg_src_2), 
     .sel(MEM_WB_mem_to_reg), 

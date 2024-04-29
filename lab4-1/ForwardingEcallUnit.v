@@ -13,7 +13,7 @@ module ForwardingEcallUnit(
     input [4:0] rs1;
     input [4:0] rs2;
     input is_ecall;
-    input fromWBrd;
+    input [4:0] fromWBrd;
     input [4:0] EX_MEM_rd;
     output reg [1:0] mux_rs1_sel;
     output reg mux_rs2_sel;
