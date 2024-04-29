@@ -298,8 +298,8 @@ module cpu(input reset,       // positive reset signal
       MEM_WB_mem_to_reg <= EX_MEM_mem_to_reg;
       MEM_WB_reg_write <= EX_MEM_reg_write;
       //From others
-      MEM_WB_mem_to_reg_src_1 <= dmem_out;
-      MEM_WB_mem_to_reg_src_2 <= EX_MEM_alu_out;
+      MEM_WB_mem_to_reg_src_1 <= EX_MEM_alu_out;
+      MEM_WB_mem_to_reg_src_2 <= dmem_out;
       MEM_WB_is_halted <= EX_MEM_is_halted;
       MEM_WB_rd <= EX_MEM_rd;
     end
