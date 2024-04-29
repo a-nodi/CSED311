@@ -1,3 +1,7 @@
+`define MEM_TO_EX_FORWARD 2'b01
+`define WB_TO_EX_FORWARD 2'b10
+`define NO_FORWARD 2'b00
+
 module ForwardingUnit(
     ID_EX_rs1,
     ID_EX_rs2,
@@ -21,24 +25,24 @@ module ForwardingUnit(
     always @(*) begin
         // Forward operation of rs1
         if (ID_EX_rs1 != 0 && ID_EX_rs1 == EX_MEM_rd && EX_MEM_RegWrite) begin // MEM stage
-            ForwardA = 2'b10;
+            ForwardA = `MEM_TO_EX_FORWARD;
         end
         else if (ID_EX_rs1 != 0 && ID_EX_rs1 == MEM_WB_rd && MEM_WB_RegWrite) begin // WB state
-            ForwardA = 2'b01;
+            ForwardA = `WB_TO_EX_FORWARD;
         end
         else begin
-            ForwardA = 2'b00;
+            ForwardA = `NO_FORWARD;
         end
 
         // Forward operation of rs2
         if (ID_EX_rs2 != 0 && ID_EX_rs2 == EX_MEM_rd && EX_MEM_RegWrite) begin // MEM state
-            ForwardB = 2'b10;
+            ForwardB = `MEM_TO_EX_FORWARD;
         end
         else if (ID_EX_rs2 != 0 && ID_EX_rs2 == MEM_WB_rd && MEM_WB_RegWrite) begin // WB state
-            ForwardB = 2'b01;
+            ForwardB = `WB_TO_EX_FORWARD;
         end
         else begin
-            ForwardB = 2'b00;
+            ForwardB = `NO_FORWARD;
         end
 
     end
