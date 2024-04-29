@@ -47,8 +47,6 @@ module cpu(input reset,       // positive reset signal
   //Dmem
   wire [31:0] dmem_out;
 
-  wire is_stall;
-
   wire ID_EX_is_halted_temp;
   //Forwarding
   wire [1:0] forward_A;
@@ -118,7 +116,7 @@ module cpu(input reset,       // positive reset signal
   Mux2to1 mux_is_ecall(
     .in0(IF_ID_inst[19:15]),
     .in1(5'b10001),
-    .sell(is_ecall),
+    .sel(is_ecall),
     .out(rs1)
   );
 

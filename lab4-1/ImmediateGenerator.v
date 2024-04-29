@@ -16,7 +16,7 @@ module ImmediateGenerator(
 
     always @(*) begin
         case(opcode)
-            `ARITHMETIC_IMM, `LOAD, // `JALR: // I-type
+            `ARITHMETIC_IMM, `LOAD: // `JALR: // I-type
                 imm_gen_out = {{20{imm_I[11]}}, imm_I};
             `STORE: // S-type
                 imm_gen_out = {{20{imm_S[11]}}, imm_S};

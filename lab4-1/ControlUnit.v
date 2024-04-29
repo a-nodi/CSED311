@@ -1,3 +1,5 @@
+`include "opcodes.v"
+
 module ControlUnit (
     part_of_inst,
     mem_read,
