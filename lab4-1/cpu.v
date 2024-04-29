@@ -32,7 +32,7 @@ module cpu(input reset,       // positive reset signal
   wire alu_src;
   wire reg_write;
   wire pc_to_reg;
-  wire [6:0] alu_op;
+  wire [4:0] alu_op;
   wire is_ecall;
   //ImmGen
   wire [31:0] imm_gen_out;
@@ -63,7 +63,7 @@ module cpu(input reset,       // positive reset signal
   // 1. You might need other pipeline registers that are not described below
   // 2. You might not need registers described below
   /***** IF/ID pipeline registers *****/
-  reg IF_ID_inst;           // will be used in ID stage
+  reg [31:0] IF_ID_inst;           // will be used in ID stage
   /***** ID/EX pipeline registers *****/
   // From the control unit
   reg ID_EX_alu_op;         // will be used in EX stage
@@ -148,7 +148,7 @@ module cpu(input reset,       // positive reset signal
     if (reset) begin
       IF_ID_inst <= 0;
     end
-    else if (IF_ID_write) begin
+    else if (!is_stall) begin
       IF_ID_inst <= imem_out;
     end
   end
@@ -177,7 +177,6 @@ module cpu(input reset,       // positive reset signal
     .alu_src(alu_src),       // output
     .write_enable(reg_write),  // output
     .pc_to_reg(pc_to_reg),     // output
-    .alu_op(alu_op),        // output
     .is_ecall(is_ecall)       // output (ecall inst)
   );
 
@@ -230,13 +229,12 @@ module cpu(input reset,       // positive reset signal
   // ---------- ALU Control Unit ----------
   ALUControlUnit alu_ctrl_unit (
     .part_of_inst(ID_EX_ALU_ctrl_unit_input),  // input
-    .opcode(ID_EX_alu_op),
-    .alu_op(func_code)         // output
+    .alu_op(alu_op)         // output
   );
 
   // ---------- ALU ----------
   ALU alu (
-    .alu_op(func_code),      // input
+    .alu_op(alu_op),      // input
     .alu_in_1(alu_in_1),    // input  
     .alu_in_2(alu_in_2),    // input
     .alu_result(alu_result),  // output
@@ -355,8 +353,8 @@ module cpu(input reset,       // positive reset signal
     .is_ecall(is_ecall),
     .fromWBrd(rd),
     .EX_MEM_rd(EX_MEM_rd),
-    .mux_rs1_dout(mux_rs1_dout),
-    .mux_rs2_dout(mux_rs2_dout)
+    .mux_rs1_sel(mux_rs1_dout),
+    .mux_rs2_sel(mux_rs2_dout)
   );
 
   Mux4to1 Mux_rs1_dout(

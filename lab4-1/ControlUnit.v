@@ -8,11 +8,10 @@ module ControlUnit (
     alu_src,
     write_enable,
     pc_to_reg,
-    alu_op,
     is_ecall
 );
 
-    input part_of_inst;
+    input [6:0] part_of_inst;
     output reg mem_read;
     output reg mem_to_reg;
     output reg mem_write;
@@ -22,10 +21,10 @@ module ControlUnit (
     output reg is_ecall;
 
     always @(*) begin
-//initialization
-      is_jal = 0;
-      is_jalr = 0;
-      branch = 0;
+      //initialization
+      // is_jal = 0;
+      // is_jalr = 0;
+      // branch = 0;
       mem_read = 0;
       mem_to_reg = 0;
       mem_write = 0;
