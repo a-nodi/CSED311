@@ -354,9 +354,9 @@ module cpu(input reset,       // positive reset signal
   ForwardingEcallUnit FEU(
     .rs1(rs1), 
     .rs2(rs2),
+    .is_ecall(is_ecall),
     .fromWBrd(rd),
     .EX_MEM_rd(EX_MEM_rd),
-    .is_ecall(is_ecall),
     .mux_rs1_dout(mux_rs1_dout),
     .mux_rs2_dout(mux_rs2_dout)
   );
