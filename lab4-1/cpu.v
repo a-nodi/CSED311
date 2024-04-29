@@ -47,15 +47,15 @@ module cpu(input reset,       // positive reset signal
   //Dmem
   wire [31:0] dmem_out;
 
-  wire ID_EX_is_halted_temp;
+  reg check_is_halted;
   //Forwarding
-  wire [1:0] forward_A;
-  wire [1:0] forward_B;
+  wire [1:0] ForwardA_sel;
+  wire [1:0] ForwardB_sel;
   wire [31:0] forWard_B_out;
-  wire [1:0]mux_rs1_dout;
-  wire mux_rs2_dout;
-  wire [31:0] f_rs1_dout;
-  wire [31:0] f_rs2_dout;
+  wire [1:0] mux_rs1_sel;
+  wire mux_rs2_sel;
+  wire [31:0] forwarding_rs1_dout;
+  wire [31:0] forwarding_rs2_dout;
 
   /***** Register declarations *****/
   // You need to modify the width of registers
@@ -107,10 +107,9 @@ module cpu(input reset,       // positive reset signal
   reg [4:0] MEM_WB_rd;
   reg MEM_WB_is_halted;
 
-
   assign rs2 = IF_ID_inst[24:20];
   assign rd = MEM_WB_rd;
-  assign ID_EX_is_halted_temp = is_ecall & (f_rs1_dout==10)&(rs1==17);
+  assign check_is_halted = is_ecall & (forwarding_rs1_dout==10)&(rs1==17);
   assign is_halted = MEM_WB_is_halted;
 
   always @(is_ecall or IF_ID_inst) begin
@@ -216,12 +215,12 @@ module cpu(input reset,       // positive reset signal
       ID_EX_mem_to_reg <= mem_to_reg;   
       ID_EX_reg_write <= reg_write;     
       // From others
-      ID_EX_rs1_data <= f_rs1_dout;
-      ID_EX_rs2_data <= f_rs2_dout;
+      ID_EX_rs1_data <= forwarding_rs1_dout;
+      ID_EX_rs2_data <= forwarding_rs2_dout;
       ID_EX_imm <= imm_gen_out;
       ID_EX_ALU_ctrl_unit_input <= IF_ID_inst;
       ID_EX_rd <= IF_ID_inst[11:7];
-      ID_EX_is_halted <= ID_EX_is_halted_temp;
+      ID_EX_is_halted <= check_is_halted;
       ID_EX_rs1 <= rs1;
       ID_EX_rs2 <= rs2;
     end
@@ -305,7 +304,7 @@ module cpu(input reset,       // positive reset signal
     end
   end
 
-  Mux2to1 Reg_Write_MUX (
+  Mux2to1 mux_mem_to_reg (
     .in0(MEM_WB_mem_to_reg_src_1), 
     .in1(MEM_WB_mem_to_reg_src_2), 
     .sel(MEM_WB_mem_to_reg), 
@@ -319,8 +318,8 @@ module cpu(input reset,       // positive reset signal
     .MEM_WB_rd(MEM_WB_rd),
     .EX_MEM_RegWrite(EX_MEM_reg_write),
     .MEM_WB_RegWrite(MEM_WB_reg_write),
-    .ForwardA(forward_A),
-    .ForwardB(forward_B)
+    .ForwardA(ForwardA_sel),
+    .ForwardB(ForwardB_sel)
   );
 
   Mux4to1 mux_forward_A(
@@ -328,7 +327,7 @@ module cpu(input reset,       // positive reset signal
     .in1(EX_MEM_alu_out),
     .in2(rd_din),
     .in3(0),
-    .sel(forward_A),
+    .sel(ForwardA_sel),
     .out(alu_in_1)
   );
 
@@ -337,7 +336,7 @@ module cpu(input reset,       // positive reset signal
     .in1(EX_MEM_alu_out),
     .in2(rd_din),
     .in3(0),
-    .sel(forward_B),
+    .sel(ForwardB_sel),
     .out(forWard_B_out)
   );
 
@@ -354,24 +353,24 @@ module cpu(input reset,       // positive reset signal
     .is_ecall(is_ecall),
     .fromWBrd(rd),
     .EX_MEM_rd(EX_MEM_rd),
-    .mux_rs1_sel(mux_rs1_dout),
-    .mux_rs2_sel(mux_rs2_dout)
+    .mux_rs1_sel(mux_rs1_sel),
+    .mux_rs2_sel(mux_rs2_sel)
   );
 
-  Mux4to1 Mux_rs1_dout(
+  Mux4to1 Mux_forwarding_rs1_dout(
     .in0(rd_din),
     .in1(rs1_dout),
     .in2(EX_MEM_alu_out),
     .in3(0),
-    .sel(mux_rs1_dout),
-    .out(f_rs1_dout)
+    .sel(mux_rs1_sel),
+    .out(forwarding_rs1_dout)
   );  
 
-  Mux2to1 Mux_rs2_dout(
+  Mux2to1 Mux_forwarding_rs2_dout(
     .in0(rd_din),
     .in1(rs2_dout),
-    .sel(mux_rs2_dout),
-    .out(f_rs2_dout)
+    .sel(mux_rs2_sel),
+    .out(forwarding_rs2_dout)
   );
 
   HazardDetectionUnit HDU(
