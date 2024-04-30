@@ -363,7 +363,6 @@ module cpu(input reset,       // positive reset signal
     .rs1(rs1), 
     .rs2(rs2),
     .is_ecall(is_ecall),
-    .fromWBrd(rd),
     .EX_MEM_rd(EX_MEM_rd),
     .mux_rs1_sel(mux_rs1_sel),
     .mux_rs2_sel(mux_rs2_sel)
