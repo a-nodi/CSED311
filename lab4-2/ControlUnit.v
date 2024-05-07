@@ -21,10 +21,10 @@ module ControlUnit (
     output reg is_ecall;
 
     always @(*) begin
-      //initialization
-      // is_jal = 0;
-      // is_jalr = 0;
-      // branch = 0;
+      // initialization
+      is_jal = 0;
+      is_jalr = 0;
+      branch = 0;
       mem_read = 0;
       mem_to_reg = 0;
       mem_write = 0;
@@ -52,7 +52,7 @@ module ControlUnit (
             alu_src = 1;
         end
 
-        /*
+        
         `BRANCH: begin // B-type
             branch = 1;
         end
@@ -67,7 +67,6 @@ module ControlUnit (
             pc_to_reg = 1;
             alu_src = 1;
         end
-        */
         
         `ECALL: begin // System Call
             is_ecall = 1;
@@ -76,11 +75,4 @@ module ControlUnit (
         end
       endcase
     end    
-
-
-
-
-
 endmodule
-
-
