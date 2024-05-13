@@ -38,4 +38,5 @@ module BTB(
             target_table[ID_EX_btb_index] <= ID_EX_pc;
         end
     end
+
 endmodule

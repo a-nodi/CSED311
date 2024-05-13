@@ -66,4 +66,5 @@ module TwoBitPredictor(
             end
         endcase
     end
+
 endmodule

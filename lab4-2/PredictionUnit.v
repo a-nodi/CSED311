@@ -12,10 +12,10 @@ module PredictionUnit(
     ID_EX_is_jal,
     ID_EX_is_jalr,
     ID_EX_branch,
+    alu_bcond,
     ID_EX_branch_taken,
-    ID_EX_bcond,
-    pc_plus_imm,
-    reg_plus_imm,
+    pc_imm,
+    alu_result,
     ID_EX_BHSR,
     BHSR,
     predicted_pc
@@ -29,9 +29,9 @@ module PredictionUnit(
     input ID_EX_is_jalr;
     input ID_EX_branch;
     input ID_EX_branch_taken;
-    input ID_EX_bcond;
-    input [`PC_WIDTH - 1:0] pc_plus_imm;
-    input [`PC_WIDTH - 1:0] reg_plus_imm;
+    input alu_bcond;
+    input [`PC_WIDTH - 1:0] pc_imm;
+    input [`PC_WIDTH - 1:0] alu_result;
     input [`BTB_INDEX_WIDTH - 1:0] ID_EX_BHSR;
     output reg [`BTB_INDEX_WIDTH - 1:0] BHSR;
     output reg [31:0] predicted_pc;
@@ -75,7 +75,7 @@ module PredictionUnit(
         .IF_btb_index(IF_btb_index),
         .ID_EX_btb_index(ID_EX_btb_index),
         .update_table(branch_or_jump),
-        .ID_EX_pc(ID_EX_is_jalr ? reg_plus_imm : pc_plus_imm),
+        .ID_EX_pc(ID_EX_is_jalr ? alu_result : pc_imm),
         .reset(reset),
         .clk(clk),
         .target_out(target_out)
@@ -98,15 +98,9 @@ module PredictionUnit(
 
     assign is_tag_match = IF_tag == tag_from_table;
 
-    
-
     always @(*) begin
         BHSR = IF_BHSR;
         predicted_pc = is_tag_match && pred_taken && target_out != 0 ? target_out : IF_pc + 4;
     end
-    
-        
-
-
 
 endmodule

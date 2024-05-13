@@ -29,4 +29,5 @@ module BHSR(
         
         IF_BHSR <= _branch_history;
     end
+
 endmodule
