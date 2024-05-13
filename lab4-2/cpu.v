@@ -212,7 +212,7 @@ module cpu(input reset,       // positive reset signal
     .in1(predicted_pc),
     .sel(is_correct),
     .out(next_pc)
-  )
+  );
   
   // ---------- Instruction Memory ----------
   InstMemory imem(
@@ -264,9 +264,9 @@ module cpu(input reset,       // positive reset signal
     .alu_src(alu_src),       // output
     .write_enable(reg_write),  // output
     .pc_to_reg(pc_to_reg),     // output
-    .is_jal(is_jal)
-    .is_jalr(is_jalr)
-    .branch(branch)
+    .is_jal(is_jal),
+    .is_jalr(is_jalr),
+    .branch(branch),
     .is_ecall(is_ecall)       // output (ecall inst)
   );
 
@@ -351,7 +351,7 @@ module cpu(input reset,       // positive reset signal
     .in1(ID_EX_pc),
     .in2(ID_EX_imm),
     .out(pc_imm)
-  )
+  );
 
   // Update EX/MEM pipeline registers here
   always @(posedge clk) begin
