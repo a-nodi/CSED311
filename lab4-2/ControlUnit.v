@@ -8,6 +8,9 @@ module ControlUnit (
     alu_src,
     write_enable,
     pc_to_reg,
+    is_jal,
+    is_jalr,
+    branch,
     is_ecall
 );
 
@@ -18,6 +21,9 @@ module ControlUnit (
     output reg alu_src;
     output reg write_enable;
     output reg pc_to_reg;
+    output reg is_jal;
+    output reg is_jalr;
+    output reg branch;
     output reg is_ecall;
 
     always @(*) begin

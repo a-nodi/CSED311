@@ -37,6 +37,11 @@ module cpu(input reset,       // positive reset signal
   wire pc_to_reg;
   wire [4:0] alu_op;
   wire is_ecall;
+
+  wire is_jal;
+  wire is_jalr;
+  wire branch;
+  wire [31:0] pc_imm;
   
   //ImmGen
   wire [31:0] imm_gen_out;
@@ -72,6 +77,9 @@ module cpu(input reset,       // positive reset signal
   // 2. You might not need registers described below
   /***** IF/ID pipeline registers *****/
   reg [31:0] IF_ID_inst;           // will be used in ID stage
+  reg [31:0] IF_ID_pc;
+  reg [4:0] IF_ID_BHSR;
+  reg IF_ID_is_flush;
 
   /***** ID/EX pipeline registers *****/
   // From the control unit
@@ -92,6 +100,15 @@ module cpu(input reset,       // positive reset signal
 
   reg [4:0] ID_EX_rs1;
   reg [4:0] ID_EX_rs2;
+  
+  reg ID_EX_branch;
+  reg ID_EX_is_jal;
+  reg ID_EX_is_jalr;
+  reg [31:0] ID_EX_pc;
+  reg [4:0] ID_EX_BHSR;
+
+  reg branch_or_jmp;
+  reg ID_EX_branch_taken;
 
   /***** EX/MEM pipeline registers *****/
   // From the control unit
@@ -122,6 +139,12 @@ module cpu(input reset,       // positive reset signal
   assign check_is_halted = is_ecall & (forwarding_rs1_dout==10)&(rs1==17);
   assign is_halted = MEM_WB_is_halted;
 
+  wire [4:0] BHSR;
+  wire [31:0] predicted_pc;
+  reg [31:0] correct_pc;
+  reg is_correct;
+  wire is_flush;
+
   always @(is_ecall or IF_ID_inst) begin
     if (is_ecall)
         rs1 = 5'b10001;  
@@ -139,11 +162,57 @@ module cpu(input reset,       // positive reset signal
     .current_pc(current_pc)   // output
   );
 
-  Adder PC_adder(
-    .in1(current_pc),
-    .in2(32'd4),
-    .out(next_pc)
+  // Adder PC_adder(
+  //   .in1(current_pc),
+  //   .in2(32'd4),
+  //   .out(next_pc)
+  // );
+
+  assign ID_EX_branch_taken = ID_EX_branch & alu_bcond; 
+  assign branch_or_jmp = ID_EX_branch_taken | ID_EX_is_jal | ID_EX_is_jalr; 
+
+  PredictionUnit PC_predict(
+    .reset(reset),
+    .clk(clk),
+    .IF_pc(current_pc), // in IF stage
+    .ID_EX_pc(ID_EX_pc), // in EX stage
+    .branch_or_jmp(branch_or_jmp)
+    .ID_EX_is_jal(ID_EX_is_jal), // ID_EX
+    .ID_EX_is_jalr(ID_EX_is_jalr), // ID_EX
+    .ID_EX_branch(ID_EX_branch),
+    .alu_bcond(alu_bcond),
+    .ID_EX_branch_taken(ID_EX_branch_taken), // ID_EX
+    .pc_imm(pc_imm), // in EX stage
+    .alu_result(alu_result), // in EX stage
+    .ID_EX_BHSR(ID_EX_BHSR),
+    .BHSR(BHSR), //output
+    .predicted_pc(predicted_pc) //output // in IF stage
   );
+
+  always @(*) begin
+    case ({ID_EX_is_jalr, ID_EX_is_jal, ID_EX_branch_taken})
+        3'b100: correct_pc = alu_result;
+        3'b010: correct_pc = pc_imm;
+        3'b001: correct_pc = pc_imm;
+        default: correct_pc = ID_EX_pc + 32'd4;
+    endcase
+  end
+  
+  always @(*) begin
+    is_correct = 1'b1;
+    if (ID_EX_pc != 0 && IF_ID_pc != correct_pc) begin
+        is_correct = 1'b0;
+    end
+  end
+
+  assign is_flush = !is_correct;
+
+  Mux2to1 mux_next_pc(
+    .in0(correct_pc),
+    .in1(predicted_pc),
+    .sel(is_correct),
+    .out(next_pc)
+  )
   
   // ---------- Instruction Memory ----------
   InstMemory imem(
@@ -157,9 +226,17 @@ module cpu(input reset,       // positive reset signal
   always @(posedge clk) begin
     if (reset) begin
       IF_ID_inst <= 0;
+
+      IF_ID_pc <=0;
+      IF_ID_BHSR <= 0;
+      IF_ID_is_flush <=0;
     end
     else if (!is_stall) begin
       IF_ID_inst <= imem_out;
+
+      IF_ID_pc <= current_pc;
+      IF_ID_BHSR <= BHSR;
+      IF_ID_is_flush <= is_flush;
     end
   end
 
@@ -187,6 +264,9 @@ module cpu(input reset,       // positive reset signal
     .alu_src(alu_src),       // output
     .write_enable(reg_write),  // output
     .pc_to_reg(pc_to_reg),     // output
+    .is_jal(is_jal)
+    .is_jalr(is_jalr)
+    .branch(branch)
     .is_ecall(is_ecall)       // output (ecall inst)
   );
 
@@ -198,7 +278,7 @@ module cpu(input reset,       // positive reset signal
 
   // Update ID/EX pipeline registers here
   always @(posedge clk) begin
-    if (reset | is_stall) begin
+    if (reset | is_stall | IF_ID_is_flush | is_flush) begin
       // From ControlUnit
       ID_EX_alu_op <= 0;         
       ID_EX_alu_src <= 0;        
@@ -206,6 +286,10 @@ module cpu(input reset,       // positive reset signal
       ID_EX_mem_read <= 0;       
       ID_EX_mem_to_reg <= 0;     
       ID_EX_reg_write <= 0;    
+
+      ID_EX_is_jal <= 0;
+      ID_EX_is_jalr <= 0;
+      ID_EX_branch <= 0;
         
       // From others
       ID_EX_rs1_data <= 0;
@@ -216,6 +300,9 @@ module cpu(input reset,       // positive reset signal
       ID_EX_is_halted <= 0;
       ID_EX_rs1 <= 0;
       ID_EX_rs2 <= 0;
+
+      ID_EX_pc<=0;
+      ID_EX_BHSR <= 0;
     end
     else begin
       // From ControlUnit
@@ -226,6 +313,10 @@ module cpu(input reset,       // positive reset signal
       ID_EX_mem_to_reg <= mem_to_reg;   
       ID_EX_reg_write <= reg_write;
 
+      ID_EX_is_jal <= is_jal;
+      ID_EX_is_jalr <= is_jalr;
+      ID_EX_branch <= branch;
+
       // From others
       ID_EX_rs1_data <= forwarding_rs1_dout;
       ID_EX_rs2_data <= forwarding_rs2_dout;
@@ -235,6 +326,9 @@ module cpu(input reset,       // positive reset signal
       ID_EX_is_halted <= check_is_halted;
       ID_EX_rs1 <= rs1;
       ID_EX_rs2 <= rs2;
+
+      ID_EX_pc<= IF_ID_pc;
+      ID_EX_BHSR <= IF_ID_BHSR;
     end
   end
 
@@ -252,6 +346,12 @@ module cpu(input reset,       // positive reset signal
     .alu_result(alu_result),  // output
     .alu_bcond(alu_bcond)     // output
   );
+
+  Adder adder_pc_imm(
+    .in1(ID_EX_pc),
+    .in2(ID_EX_imm),
+    .out(pc_imm)
+  )
 
   // Update EX/MEM pipeline registers here
   always @(posedge clk) begin
