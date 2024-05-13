@@ -8,7 +8,7 @@ module PredictionUnit(
     clk,
     IF_pc,
     ID_EX_pc,
-    branch_or_jump,
+    branch_or_jmp,
     ID_EX_is_jal,
     ID_EX_is_jalr,
     ID_EX_branch,
@@ -24,7 +24,7 @@ module PredictionUnit(
     input [`PC_WIDTH - 1:0] ID_EX_pc;
     input reset;
     input clk;
-    input branch_or_jump;
+    input branch_or_jmp;
     input ID_EX_is_jal;
     input ID_EX_is_jalr;
     input ID_EX_branch;
@@ -49,20 +49,21 @@ module PredictionUnit(
     wire [`BTB_INDEX_WIDTH - 1:0] ID_EX_btb_index;
 
     wire is_tag_match;
-    wire target_out;
+    wire [`PC_WIDTH - 1:0] target_out;
+    wire pred_taken;
 
     TagTable tag_table(
         .IF_btb_index(IF_btb_index),
         .ID_EX_btb_index(ID_EX_btb_index),
         .ID_EX_tag(ID_EX_tag),
-        .write_tag(branch_or_jump),
+        .update_tag(branch_or_jmp),
         .reset(reset),
         .clk(clk),
         .corresponding_tag(tag_from_table)
     );
 
     TwoBitPredictor predictor(
-        .actually_taken(branch_or_jump),
+        .actually_taken(branch_or_jmp),
         .IF_btb_index(IF_btb_index),
         .ID_EX_btb_index(ID_EX_btb_index),
         .update_counter(ID_EX_branch || ID_EX_is_jal || ID_EX_is_jalr),
@@ -74,7 +75,7 @@ module PredictionUnit(
     BTB btb(
         .IF_btb_index(IF_btb_index),
         .ID_EX_btb_index(ID_EX_btb_index),
-        .update_table(branch_or_jump),
+        .update_table(branch_or_jmp),
         .ID_EX_pc(ID_EX_is_jalr ? alu_result : pc_imm),
         .reset(reset),
         .clk(clk),
@@ -82,7 +83,7 @@ module PredictionUnit(
     );
 
     BHSR bhsr(
-        .branch_or_jump(branch_or_jump),
+        .branch_or_jump(branch_or_jmp),
         .reset(reset),
         .clk(clk),
         .IF_BHSR(IF_BHSR)
