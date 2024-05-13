@@ -50,6 +50,7 @@ module PredictionUnit(
 
     wire is_tag_match;
     wire [`PC_WIDTH - 1:0] target_out;
+    wire try_to_branch;
     wire pred_taken;
 
     TagTable tag_table(
@@ -66,7 +67,7 @@ module PredictionUnit(
         .actually_taken(branch_or_jmp),
         .IF_btb_index(IF_btb_index),
         .ID_EX_btb_index(ID_EX_btb_index),
-        .update_counter(ID_EX_branch || ID_EX_is_jal || ID_EX_is_jalr),
+        .update_counter(try_to_branch),
         .reset(reset),
         .clk(clk),
         .pred_taken(pred_taken)
@@ -84,6 +85,7 @@ module PredictionUnit(
 
     BHSR bhsr(
         .branch_or_jump(branch_or_jmp),
+        .update_bhsr(try_to_branch),
         .reset(reset),
         .clk(clk),
         .IF_BHSR(IF_BHSR)
@@ -99,9 +101,11 @@ module PredictionUnit(
 
     assign is_tag_match = IF_tag == tag_from_table;
 
+    assign try_to_branch = ID_EX_branch || ID_EX_is_jal || ID_EX_is_jalr;
+
     always @(*) begin
         BHSR = IF_BHSR;
-        predicted_pc = is_tag_match && pred_taken && target_out != 0 ? target_out : IF_pc + 4;
+        predicted_pc = is_tag_match && pred_taken && (target_out != 0) ? target_out : IF_pc + 4;
     end
 
 endmodule
