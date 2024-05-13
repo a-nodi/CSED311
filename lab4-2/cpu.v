@@ -42,6 +42,7 @@ module cpu(input reset,       // positive reset signal
   wire is_jalr;
   wire branch;
   wire [31:0] pc_imm;
+  wire [31:0] write_data;
   
   //ImmGen
   wire [31:0] imm_gen_out;
@@ -70,6 +71,9 @@ module cpu(input reset,       // positive reset signal
   wire [31:0] forwarding_rs1_dout;
   wire [31:0] forwarding_rs2_dout;
 
+  wire [31:0] pc_4_or_alu_out;
+  wire [31:0] pc_4_or_rd_din;
+
   /***** Register declarations *****/
   // You need to modify the width of registers
   // In addition, 
@@ -89,6 +93,7 @@ module cpu(input reset,       // positive reset signal
   reg ID_EX_mem_read;       // will be used in MEM stage
   reg ID_EX_mem_to_reg;     // will be used in WB stage
   reg ID_EX_reg_write;      // will be used in WB stage
+  reg ID_EX_pc_to_reg;
   
   // From others
   reg [31:0] ID_EX_rs1_data;
@@ -114,6 +119,8 @@ module cpu(input reset,       // positive reset signal
   // From the control unit
   reg EX_MEM_mem_write;     // will be used in MEM stage
   reg EX_MEM_mem_read;      // will be used in MEM stage
+  reg EX_MEM_pc_to_reg;
+  reg [31:0] EX_MEM_pc;
   // reg EX_MEM_is_branch;     // will be used in MEM stage
   reg EX_MEM_mem_to_reg;    // will be used in WB stage
   reg EX_MEM_reg_write;     // will be used in WB stage
@@ -127,6 +134,8 @@ module cpu(input reset,       // positive reset signal
   // From the control unit
   reg MEM_WB_mem_to_reg;    // will be used in WB stage
   reg MEM_WB_reg_write;     // will be used in WB stage
+  reg MEM_WB_pc_to_reg; 
+  reg [31:0] MEM_WB_pc;
   // From others
   reg [31:0] MEM_WB_mem_to_reg_src_1;
   reg [31:0] MEM_WB_mem_to_reg_src_2;
@@ -239,6 +248,8 @@ module cpu(input reset,       // positive reset signal
       IF_ID_is_flush <= is_flush;
     end
   end
+  
+  assign write_data = MEM_WB_pc_to_reg ? rd_din : MEM_WB_pc + 32'd4;
 
   // ---------- Register File ----------
   RegisterFile reg_file (
@@ -247,7 +258,7 @@ module cpu(input reset,       // positive reset signal
     .rs1 (rs1),          // input
     .rs2 (rs2),          // input
     .rd (rd),           // input
-    .rd_din (rd_din),       // input
+    .rd_din (write_data),       // input
     .write_enable (MEM_WB_reg_write),    // input
     .rs1_dout (rs1_dout),     // output
     .rs2_dout (rs2_dout),      // output
@@ -290,6 +301,7 @@ module cpu(input reset,       // positive reset signal
       ID_EX_is_jal <= 0;
       ID_EX_is_jalr <= 0;
       ID_EX_branch <= 0;
+      ID_EX_pc_to_reg <= 0;
         
       // From others
       ID_EX_rs1_data <= 0;
@@ -316,6 +328,7 @@ module cpu(input reset,       // positive reset signal
       ID_EX_is_jal <= is_jal;
       ID_EX_is_jalr <= is_jalr;
       ID_EX_branch <= branch;
+      ID_EX_pc_to_reg <= pc_to_reg;
 
       // From others
       ID_EX_rs1_data <= forwarding_rs1_dout;
@@ -366,6 +379,9 @@ module cpu(input reset,       // positive reset signal
       EX_MEM_dmem_data <= 0;
       EX_MEM_rd <= 0;
       EX_MEM_is_halted <= 0;
+
+      EX_MEM_pc_to_reg <= 0;
+      EX_MEM_pc <= 0;
     end
     else begin
       //From ControlUnit
@@ -378,6 +394,9 @@ module cpu(input reset,       // positive reset signal
       EX_MEM_dmem_data <= forWard_B_out;
       EX_MEM_rd <= ID_EX_rd;
       EX_MEM_is_halted <= ID_EX_is_halted;
+
+      EX_MEM_pc_to_reg <= ID_EX_pc_to_reg;
+      EX_MEM_pc <= ID_EX_pc;
     end
   end
 
@@ -403,6 +422,9 @@ module cpu(input reset,       // positive reset signal
       MEM_WB_mem_to_reg_src_2 <= 0;
       MEM_WB_is_halted <= 0;
       MEM_WB_rd <= 0;
+
+      MEM_WB_pc_to_reg <= 0;
+      MEM_WB_pc <= 0;
     end
     else begin
       //From ControlUnit
@@ -413,6 +435,9 @@ module cpu(input reset,       // positive reset signal
       MEM_WB_mem_to_reg_src_2 <= dmem_out;
       MEM_WB_is_halted <= EX_MEM_is_halted;
       MEM_WB_rd <= EX_MEM_rd;
+
+      MEM_WB_pc_to_reg <= EX_MEM_pc_to_reg;
+      MEM_WB_pc <= EX_MEM_pc;
     end
   end
 
@@ -434,10 +459,13 @@ module cpu(input reset,       // positive reset signal
     .ForwardB(ForwardB_sel)
   );
 
+  assign pc_4_or_alu_out = EX_MEM_pc_to_reg ? EX_MEM_alu_out : EX_MEM_pc + 32'd4;
+  assign pc_4_or_rd_din = MEM_WB_pc_to_reg ? rd_din : MEM_WB_pc + 32'd4;
+
   Mux4to1 mux_forward_A(
     .in0(ID_EX_rs1_data),
-    .in1(EX_MEM_alu_out),
-    .in2(rd_din),
+    .in1(pc_4_or_alu_out),
+    .in2(pc_4_or_rd_din),
     .in3(0),
     .sel(ForwardA_sel),
     .out(alu_in_1)
@@ -445,8 +473,8 @@ module cpu(input reset,       // positive reset signal
 
   Mux4to1 mux_forward_B(
     .in0(ID_EX_rs2_data),
-    .in1(EX_MEM_alu_out),
-    .in2(rd_din),
+    .in1(pc_4_or_alu_out),
+    .in2(pc_4_or_rd_din),
     .in3(0),
     .sel(ForwardB_sel),
     .out(forWard_B_out)
@@ -469,16 +497,16 @@ module cpu(input reset,       // positive reset signal
   );
 
   Mux4to1 Mux_forwarding_rs1_dout(
-    .in0(rd_din),
+    .in0(pc_4_or_rd_din),
     .in1(rs1_dout),
-    .in2(EX_MEM_alu_out),
+    .in2(pc_4_or_alu_out),
     .in3(0),
     .sel(mux_rs1_sel),
     .out(forwarding_rs1_dout)
   );  
 
   Mux2to1 Mux_forwarding_rs2_dout(
-    .in0(rd_din),
+    .in0(pc_4_or_rd_din),
     .in1(rs2_dout),
     .sel(mux_rs2_sel),
     .out(forwarding_rs2_dout)
