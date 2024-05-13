@@ -249,7 +249,7 @@ module cpu(input reset,       // positive reset signal
     end
   end
   
-  assign write_data = MEM_WB_pc_to_reg ? rd_din : MEM_WB_pc + 32'd4;
+  assign write_data = MEM_WB_pc_to_reg ? MEM_WB_pc + 32'd4 : rd_din;
 
   // ---------- Register File ----------
   RegisterFile reg_file (
@@ -459,8 +459,8 @@ module cpu(input reset,       // positive reset signal
     .ForwardB(ForwardB_sel)
   );
 
-  assign pc_4_or_alu_out = EX_MEM_pc_to_reg ? EX_MEM_alu_out : EX_MEM_pc + 32'd4;
-  assign pc_4_or_rd_din = MEM_WB_pc_to_reg ? rd_din : MEM_WB_pc + 32'd4;
+  assign pc_4_or_alu_out = EX_MEM_pc_to_reg ? EX_MEM_pc + 32'd4 : EX_MEM_alu_out;
+  assign pc_4_or_rd_din = MEM_WB_pc_to_reg ? MEM_WB_pc + 32'd4 : rd_din;
 
   Mux4to1 mux_forward_A(
     .in0(ID_EX_rs1_data),
