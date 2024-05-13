@@ -42,7 +42,7 @@ module cpu(input reset,       // positive reset signal
   wire is_jalr;
   wire branch;
   wire [31:0] pc_imm;
-  wire [31:0] write_data;
+  wire [31:0] mux_rd_din;
   
   //ImmGen
   wire [31:0] imm_gen_out;
@@ -71,8 +71,8 @@ module cpu(input reset,       // positive reset signal
   wire [31:0] forwarding_rs1_dout;
   wire [31:0] forwarding_rs2_dout;
 
-  wire [31:0] pc_4_or_alu_out;
-  wire [31:0] pc_4_or_rd_din;
+  wire [31:0] in1_alu_out;
+  wire [31:0] in2_rd_din;
 
   /***** Register declarations *****/
   // You need to modify the width of registers
@@ -177,43 +177,50 @@ module cpu(input reset,       // positive reset signal
   //   .out(next_pc)
   // );
 
-  assign ID_EX_branch_taken = ID_EX_branch & alu_bcond; 
-  assign branch_or_jmp = ID_EX_branch_taken | ID_EX_is_jal | ID_EX_is_jalr; 
+  // Calculate whether the branch condition is satisfied or not
+  assign ID_EX_branch_taken = ID_EX_branch & alu_bcond;
 
+  // Calculate whether a branch or jump instruction occurred or not
+  assign branch_or_jmp = ID_EX_branch_taken | ID_EX_is_jal | ID_EX_is_jalr;
+
+  // Instantiate the branch prediction unit
   PredictionUnit PC_predict(
     .reset(reset),
     .clk(clk),
-    .IF_pc(current_pc), // in IF stage
-    .ID_EX_pc(ID_EX_pc), // in EX stage
-    .branch_or_jmp(branch_or_jmp),
-    .ID_EX_is_jal(ID_EX_is_jal), // ID_EX
-    .ID_EX_is_jalr(ID_EX_is_jalr), // ID_EX
-    .ID_EX_branch(ID_EX_branch),
-    .alu_bcond(alu_bcond),
-    .ID_EX_branch_taken(ID_EX_branch_taken), // ID_EX
-    .pc_imm(pc_imm), // in EX stage
-    .alu_result(alu_result), // in EX stage
-    .ID_EX_BHSR(ID_EX_BHSR),
-    .BHSR(BHSR), //output
-    .predicted_pc(predicted_pc) //output // in IF stage
+    .IF_pc(current_pc), // PC in the IF stage
+    .ID_EX_pc(ID_EX_pc), // PC in the ID/EX stage
+    .branch_or_jmp(branch_or_jmp), // Whether a branch or jump occurred
+    .ID_EX_is_jal(ID_EX_is_jal), // Jal instruction in ID/EX stage
+    .ID_EX_is_jalr(ID_EX_is_jalr), // Jalr instruction in ID/EX stage
+    .ID_EX_branch(ID_EX_branch), // Branch instruction in ID/EX stage
+    .alu_bcond(alu_bcond), // Branch condition from the ALU
+    .ID_EX_branch_taken(ID_EX_branch_taken), // Whether the branch is taken in ID/EX stage
+    .pc_imm(pc_imm), // PC + immediate value in EX stage
+    .alu_result(alu_result), // ALU result in EX stage
+    .ID_EX_BHSR(ID_EX_BHSR), // BHSR (Branch History Shift Register) in ID/EX stage
+    .BHSR(BHSR), // Output BHSR
+    .predicted_pc(predicted_pc) // Output predicted PC
   );
 
+  // Calculate the correct PC value based on the instruction type
   always @(*) begin
     case ({ID_EX_is_jalr, ID_EX_is_jal, ID_EX_branch_taken})
-        3'b100: correct_pc = alu_result;
-        3'b010: correct_pc = pc_imm;
-        3'b001: correct_pc = pc_imm;
-        default: correct_pc = ID_EX_pc + 32'd4;
+        3'b100: correct_pc = alu_result; // For jalr instructions, use the ALU result
+        3'b010: correct_pc = pc_imm; // For jal instructions, use PC + immediate
+        3'b001: correct_pc = pc_imm; // For taken branches, use PC + immediate
+        default: correct_pc = ID_EX_pc + 32'd4; // Otherwise, use PC + 4
     endcase
   end
-  
+
+  // Check if the branch prediction was correct or not
   always @(*) begin
-    is_correct = 1'b1;
+    is_correct = 1'b1; // Initialize as correct
     if (ID_EX_pc != 0 && IF_ID_pc != correct_pc) begin
-        is_correct = 1'b0;
+        is_correct = 1'b0; // Set as incorrect if the prediction was wrong
     end
   end
 
+  // Generate the flush signal based on the prediction correctness
   assign is_flush = !is_correct;
 
   Mux2to1 mux_next_pc(
@@ -249,7 +256,7 @@ module cpu(input reset,       // positive reset signal
     end
   end
   
-  assign write_data = MEM_WB_pc_to_reg ? MEM_WB_pc + 32'd4 : rd_din;
+  assign mux_rd_din = MEM_WB_pc_to_reg ? MEM_WB_pc + 32'd4 : rd_din;
 
   // ---------- Register File ----------
   RegisterFile reg_file (
@@ -258,7 +265,7 @@ module cpu(input reset,       // positive reset signal
     .rs1 (rs1),          // input
     .rs2 (rs2),          // input
     .rd (rd),           // input
-    .rd_din (write_data),       // input
+    .rd_din (mux_rd_din),       // input
     .write_enable (MEM_WB_reg_write),    // input
     .rs1_dout (rs1_dout),     // output
     .rs2_dout (rs2_dout),      // output
@@ -459,13 +466,22 @@ module cpu(input reset,       // positive reset signal
     .ForwardB(ForwardB_sel)
   );
 
-  assign pc_4_or_alu_out = EX_MEM_pc_to_reg ? EX_MEM_pc + 32'd4 : EX_MEM_alu_out;
-  assign pc_4_or_rd_din = MEM_WB_pc_to_reg ? MEM_WB_pc + 32'd4 : rd_din;
+  // The in1_alu_out signal is determined as follows:
+  // If the EX_MEM_pc_to_reg signal is 1, it is set to EX_MEM_pc + 4.
+  // Otherwise, it is set to EX_MEM_alu_out.
+  // This value is used in the forwarding unit.
+  assign in1_alu_out = EX_MEM_pc_to_reg ? EX_MEM_pc + 32'd4 : EX_MEM_alu_out;
+
+  // The in2_rd_din signal is determined as follows:
+  // If the MEM_WB_pc_to_reg signal is 1, it is set to MEM_WB_pc + 4.
+  // Otherwise, it is set to rd_din.
+  // This value is also used in the forwarding unit.
+  assign in2_rd_din = MEM_WB_pc_to_reg ? MEM_WB_pc + 32'd4 : rd_din;
 
   Mux4to1 mux_forward_A(
     .in0(ID_EX_rs1_data),
-    .in1(pc_4_or_alu_out),
-    .in2(pc_4_or_rd_din),
+    .in1(in1_alu_out),
+    .in2(in2_rd_din),
     .in3(0),
     .sel(ForwardA_sel),
     .out(alu_in_1)
@@ -473,8 +489,8 @@ module cpu(input reset,       // positive reset signal
 
   Mux4to1 mux_forward_B(
     .in0(ID_EX_rs2_data),
-    .in1(pc_4_or_alu_out),
-    .in2(pc_4_or_rd_din),
+    .in1(in1_alu_out),
+    .in2(in2_rd_din),
     .in3(0),
     .sel(ForwardB_sel),
     .out(forWard_B_out)
@@ -497,16 +513,16 @@ module cpu(input reset,       // positive reset signal
   );
 
   Mux4to1 Mux_forwarding_rs1_dout(
-    .in0(pc_4_or_rd_din),
+    .in0(in2_rd_din),
     .in1(rs1_dout),
-    .in2(pc_4_or_alu_out),
+    .in2(in1_alu_out),
     .in3(0),
     .sel(mux_rs1_sel),
     .out(forwarding_rs1_dout)
   );  
 
   Mux2to1 Mux_forwarding_rs2_dout(
-    .in0(pc_4_or_rd_din),
+    .in0(in2_rd_din),
     .in1(rs2_dout),
     .sel(mux_rs2_sel),
     .out(forwarding_rs2_dout)
