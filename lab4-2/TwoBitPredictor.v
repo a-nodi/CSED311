@@ -2,7 +2,7 @@
 
 module TwoBitPredictor(
     actually_taken,
-    btb_index,
+    IF_btb_index,
     ID_EX_btb_index,
     update_counter,
     reset,
@@ -10,7 +10,7 @@ module TwoBitPredictor(
     pred_taken
 );
     input actually_taken;
-    input [`BTB_INDEX_WIDTH - 1: 0] btb_index; // Corresponding index in the BTB
+    input [`BTB_INDEX_WIDTH - 1: 0] IF_btb_index; // Corresponding index in the BTB
     input [`BTB_INDEX_WIDTH - 1: 0] ID_EX_btb_index; // Index from the ID_EX stage
     input update_counter;
     input reset;
@@ -22,9 +22,7 @@ module TwoBitPredictor(
     integer i;
 
     /*
-
     Two bit Hysteresis counter
-
     */
 
     always @(posedge clk) begin
@@ -34,24 +32,26 @@ module TwoBitPredictor(
             end
         end
         
+        // Update the counter
         if (update_counter) begin
             case (counter[ID_EX_btb_index])
                 2'b00: begin
-                    counter[btb_index] <= actually_taken == 1 ? 2'b01 : 2'b00;
+                    counter[IF_btb_index] <= actually_taken == 1 ? 2'b01 : 2'b00;
                 end
                 2'b01: begin
-                    counter[btb_index] <= actually_taken == 1 ? 2'b11 : 2'b00;
+                    counter[IF_btb_index] <= actually_taken == 1 ? 2'b11 : 2'b00;
                 end
                 2'b10: begin
-                    counter[btb_index] <= actually_taken == 1 ? 2'b11 : 2'b00;
+                    counter[IF_btb_index] <= actually_taken == 1 ? 2'b11 : 2'b00;
                 end
                 2'b11: begin
-                    counter[btb_index] <= actually_taken == 1 ? 2'b11 : 2'b10;
+                    counter[IF_btb_index] <= actually_taken == 1 ? 2'b11 : 2'b10;
                 end
             endcase
         end
 
-        case (counter[btb_index])
+        // Determine the prediction
+        case (counter[IF_btb_index])
             2'b00: begin
                 pred_taken <= 0;
             end

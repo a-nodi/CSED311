@@ -1,16 +1,16 @@
 `include "Constants.v"
 
 module BHSR(
-    is_taken,
+    branch_or_jump,
     reset,
     clk,
-    branch_history
+    IF_BHSR
 );
     
-    input is_taken;
+    input branch_or_jump;
     input reset;
     input clk;
-    output reg [`BTB_INDEX_WIDTH - 1:0] branch_history;
+    output reg [`BTB_INDEX_WIDTH - 1:0] IF_BHSR;
 
     reg [`BTB_INDEX_WIDTH - 1:0] _branch_history;
 
@@ -22,11 +22,11 @@ module BHSR(
                 _branch_history[i] <= 0;
             end
         end
-        
+
         // Update the branch history
         _branch_history[`BTB_INDEX_WIDTH - 1:1] <= _branch_history[`BTB_INDEX_WIDTH - 2:0];
-        _branch_history[0] <= is_taken;
+        _branch_history[0] <= branch_or_jump;
         
-        branch_history <= _branch_history;
+        IF_BHSR <= _branch_history;
     end
 endmodule

@@ -1,7 +1,7 @@
 `include "Constants.v"
 
 module BTB(
-    btb_index,
+    IF_btb_index,
     ID_EX_btb_index,
     update_table,
     ID_EX_pc,
@@ -9,7 +9,7 @@ module BTB(
     clk, 
     target_out
 );
-    input [`BTB_INDEX_WIDTH - 1:0] btb_index;
+    input [`BTB_INDEX_WIDTH - 1:0] IF_btb_index;
     input [`BTB_INDEX_WIDTH - 1:0] ID_EX_btb_index;
     input update_table;
     input reset;
@@ -23,7 +23,7 @@ module BTB(
 
     // Push out the target address
     always @(*) begin
-        target_out = target_table[btb_index];
+        target_out = target_table[IF_btb_index];
     end
 
     always @(posedge clk) begin
