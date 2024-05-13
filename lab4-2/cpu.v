@@ -176,7 +176,7 @@ module cpu(input reset,       // positive reset signal
     .clk(clk),
     .IF_pc(current_pc), // in IF stage
     .ID_EX_pc(ID_EX_pc), // in EX stage
-    .branch_or_jmp(branch_or_jmp)
+    .branch_or_jmp(branch_or_jmp),
     .ID_EX_is_jal(ID_EX_is_jal), // ID_EX
     .ID_EX_is_jalr(ID_EX_is_jalr), // ID_EX
     .ID_EX_branch(ID_EX_branch),
