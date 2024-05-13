@@ -33,7 +33,7 @@ module BTB(
             end
         end
 
-        // Write the target into the table when positive clk
+        // Update the table when branch or jump
         if (update_table) begin
             target_table[ID_EX_btb_index] <= ID_EX_pc;
         end

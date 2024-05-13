@@ -20,6 +20,7 @@ module TagTable(
     reg [`TAG_WIDTH - 1:0] _tag_table[0 : 2**`BTB_INDEX_WIDTH - 1];
     integer i;
 
+    // Assign the corresponding tag from the table
     always @(*) begin
         corresponding_tag = _tag_table[IF_btb_index];
     end
@@ -33,7 +34,7 @@ module TagTable(
             end
         end
 
-        // Write the tag into the table
+        // Update the tag into the table when branch or jump
         if (update_tag) begin
             _tag_table[ID_EX_btb_index] <= ID_EX_tag;
         end

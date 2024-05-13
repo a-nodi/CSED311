@@ -32,19 +32,19 @@ module TwoBitPredictor(
             end
         end
         
-        // Update the counter
+        // Update the counter when branch or jump
         if (update_counter) begin
             case (counter[ID_EX_btb_index])
-                2'b00: begin
+                2'b00: begin // Strongly not taken
                     counter[IF_btb_index] <= actually_taken == 1 ? 2'b01 : 2'b00;
                 end
-                2'b01: begin
+                2'b01: begin // Weakly not taken
                     counter[IF_btb_index] <= actually_taken == 1 ? 2'b11 : 2'b00;
                 end
-                2'b10: begin
+                2'b10: begin // Weakly taken
                     counter[IF_btb_index] <= actually_taken == 1 ? 2'b11 : 2'b00;
                 end
-                2'b11: begin
+                2'b11: begin // Strongly taken
                     counter[IF_btb_index] <= actually_taken == 1 ? 2'b11 : 2'b10;
                 end
             endcase
@@ -52,16 +52,16 @@ module TwoBitPredictor(
 
         // Determine the prediction
         case (counter[IF_btb_index])
-            2'b00: begin
+            2'b00: begin // Strongly not taken
                 pred_taken <= 0;
             end
-            2'b01: begin
+            2'b01: begin // Weakly not taken
                 pred_taken <= 0;
             end
-            2'b10: begin
+            2'b10: begin // Weakly taken
                 pred_taken <= 1;
             end
-            2'b11: begin
+            2'b11: begin // Strongly taken
                 pred_taken <= 1;
             end
         endcase

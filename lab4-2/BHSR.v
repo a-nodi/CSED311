@@ -19,7 +19,7 @@ module BHSR(
     integer i;
 
     always @(posedge clk) begin
-        if (reset) begin
+        if (reset) begin // Initialize the history to 0
             for (i = 0; i < `BTB_INDEX_WIDTH - 1; i = i + 1) begin
                 _branch_history[i] <= 0;
             end
@@ -31,6 +31,7 @@ module BHSR(
             _branch_history[0] <= branch_or_jump;
         end
 
+        // Assign the branch history to the output
         IF_BHSR <= _branch_history;
     end
 
