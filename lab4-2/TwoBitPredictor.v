@@ -23,41 +23,40 @@ module TwoBitPredictor(
 
     */
 
-    // Initialize the counter to 00
-    always @(posedge reset) begin
-        for (i = 0; i < 2**`BTB_INDEX_WIDTH; i = i + 1) begin
-            counter[i] = 2'b00;
+    always @(posedge clk) begin
+        if (reset) begin // Initialize the table to 0
+            for (i = 0; i < 2**`BTB_INDEX_WIDTH; i = i + 1) begin
+                counter[i] <= 2'b00;
+            end
         end
-    end
-
-    always @(clk) begin
+        
         case (counter[btb_index])
             2'b00: begin
-                counter[btb_index] = actually_taken == 1 ? 2'b01 : 2'b00;
+                counter[btb_index] <= actually_taken == 1 ? 2'b01 : 2'b00;
             end
             2'b01: begin
-                counter[btb_index] = actually_taken == 1 ? 2'b11 : 2'b00;
+                counter[btb_index] <= actually_taken == 1 ? 2'b11 : 2'b00;
             end
             2'b10: begin
-                counter[btb_index] = actually_taken == 1 ? 2'b11 : 2'b00;
+                counter[btb_index] <= actually_taken == 1 ? 2'b11 : 2'b00;
             end
             2'b11: begin
-                counter[btb_index] = actually_taken == 1 ? 2'b11 : 2'b10;
+                counter[btb_index] <= actually_taken == 1 ? 2'b11 : 2'b10;
             end
         endcase
 
         case (counter[btb_index])
             2'b00: begin
-                pred_taken = 0;
+                pred_taken <= 0;
             end
             2'b01: begin
-                pred_taken = 0;
+                pred_taken <= 0;
             end
             2'b10: begin
-                pred_taken = 1;
+                pred_taken <= 1;
             end
             2'b11: begin
-                pred_taken = 1;
+                pred_taken <= 1;
             end
         endcase
     end
