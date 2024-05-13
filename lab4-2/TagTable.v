@@ -2,13 +2,19 @@
 
 module TagTable(
     btb_index,
+    ID_EX_btb_index,
+    ID_EX_tag,
     current_tag,
+    update_tag,
     clk,
     reset,
     corresponding_tag
 );
     input [`BTB_INDEX_WIDTH - 1:0] btb_index;
+    input [`BTB_INDEX_WIDTH - 1:0] ID_EX_btb_index;
+    input [`TAG_WIDTH - 1:0] ID_EX_tag;
     input [`TAG_WIDTH - 1:0] current_tag;
+    input update_tag;
     input clk;
     input reset;
     output reg [`TAG_WIDTH - 1:0] corresponding_tag;
@@ -28,9 +34,11 @@ module TagTable(
                 tag_table[i] <= 0;
             end
         end
-        
+
         // Write the tag into the table
-        tag_table[btb_index] <= current_tag;
+        if (update_tag) begin
+            tag_table[ID_EX_btb_index] <= ID_EX_tag;
+        end
     end
 
 endmodule

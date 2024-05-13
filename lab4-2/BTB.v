@@ -1,35 +1,41 @@
+`include "Constants.v"
+
 module BTB(
-    input [31:0] pc,
-    input [31:0] target,
-    input branch,
-    input [1:0] branch_type,
-    input [1:0] branch_taken,
-    output reg [31:0] target_out
+    btb_index,
+    ID_EX_btb_index,
+    update_table,
+    ID_EX_pc,
+    reset,
+    clk, 
+    target_out
 );
+    input [`BTB_INDEX_WIDTH - 1:0] btb_index;
+    input [`BTB_INDEX_WIDTH - 1:0] ID_EX_btb_index;
+    input update_table;
+    input reset;
+    input clk;
+    input [`PC_WIDTH - 1:0] ID_EX_pc;
+    output reg [`PC_WIDTH - 1:0] target_out;
 
-    // reg [31:0] target_out;
+    reg [`PC_WIDTH - 1:0] target_table[0:2 ** `BTB_INDEX_WIDTH - 1];
 
-    wire[21:0] tag;
-    wire[9:0] btb_index;
+    integer i;
 
-
+    // Push out the target address
     always @(*) begin
-        if (branch) begin
-            if (branch_type == 2'b00) begin
-                target_out = pc + target;
-            end
-            else if (branch_type == 2'b01) begin
-                target_out = pc + target;
-            end
-            else if (branch_type == 2'b10) begin
-                target_out = pc + target;
-            end
-            else if (branch_type == 2'b11) begin
-                target_out = pc + target;
+        target_out = target_table[btb_index];
+    end
+
+    always @(posedge clk) begin
+        if (reset) begin // Initialize the table to 0
+            for (i = 0; i < 2 ** `BTB_INDEX_WIDTH; i = i + 1) begin
+                target_table[i] <= 0;
             end
         end
-        else begin
-            target_out = pc + 4;
+
+        // Write the target into the table when positive clk
+        if (update_table) begin
+            target_table[ID_EX_btb_index] <= ID_EX_pc;
         end
     end
 endmodule

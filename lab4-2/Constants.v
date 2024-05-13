@@ -1,4 +1,4 @@
-`define INSTRUCTION_WIDTH 32
+`define PC_WIDTH 32
 `define TAG_WIDTH 25
 `define BTB_INDEX_WIDTH 5  // As the TA said.
 
