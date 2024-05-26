@@ -74,6 +74,15 @@ module cpu(input reset,       // positive reset signal
   wire [31:0] in1_alu_out;
   wire [31:0] in2_rd_din;
 
+  wire is_input_valid;
+  wire [31:0] mem_rw_32;
+  wire mem_rw;
+  wire is_ready;
+  wire is_output_valid;
+  wire is_hit;
+  wire mem_access;
+  wire cache_stall;
+
   /***** Register declarations *****/
   // You need to modify the width of registers
   // In addition, 
@@ -161,6 +170,9 @@ module cpu(input reset,       // positive reset signal
         rs1 = IF_ID_inst[19:15]; 
   end
 
+  assign mem_access = EX_MEM_mem_read | EX_MEM_mem_write;
+  assign cache_stall = mem_access & (!is_ready | !is_output_valid | !is_hit)
+
   // ---------- Update program counter ----------
   // PC must be updated on the rising edge (positive edge) of the clock.
   PC pc(
@@ -168,6 +180,7 @@ module cpu(input reset,       // positive reset signal
     .clk(clk),         // input
     .next_pc(next_pc),     // input
     .pc_write(!is_stall),
+    .cache_stall(cache_stall),
     .current_pc(current_pc)   // output
   );
 
@@ -247,7 +260,7 @@ module cpu(input reset,       // positive reset signal
       IF_ID_BHSR <= 0;
       IF_ID_is_flush <=0;
     end
-    else if (!is_stall) begin
+    else if (!is_stall & !cache_stall) begin
       IF_ID_inst <= imem_out;
 
       IF_ID_pc <= current_pc;
@@ -296,7 +309,7 @@ module cpu(input reset,       // positive reset signal
 
   // Update ID/EX pipeline registers here
   always @(posedge clk) begin
-    if (reset | is_stall | IF_ID_is_flush | is_flush) begin
+    if (reset | (is_stall & !cache_stall) | IF_ID_is_flush | is_flush) begin
       // From ControlUnit
       ID_EX_alu_op <= 0;         
       ID_EX_alu_src <= 0;        
@@ -323,7 +336,7 @@ module cpu(input reset,       // positive reset signal
       ID_EX_pc<=0;
       ID_EX_BHSR <= 0;
     end
-    else begin
+    else if (!cache_stall) begin
       // From ControlUnit
       ID_EX_alu_op <= alu_op;         
       ID_EX_alu_src <= alu_src;       
@@ -390,7 +403,7 @@ module cpu(input reset,       // positive reset signal
       EX_MEM_pc_to_reg <= 0;
       EX_MEM_pc <= 0;
     end
-    else begin
+    else if (!cache_stall)begin
       //From ControlUnit
       EX_MEM_mem_write <= ID_EX_mem_write;
       EX_MEM_mem_read <= ID_EX_mem_read;
@@ -407,16 +420,40 @@ module cpu(input reset,       // positive reset signal
     end
   end
 
-  // ---------- Data Memory ----------
-  DataMemory dmem(
-    .reset (reset),      // input
-    .clk (clk),        // input
-    .addr (EX_MEM_alu_out),       // input
-    .din (EX_MEM_dmem_data),        // input
-    .mem_read (EX_MEM_mem_read),   // input
-    .mem_write (EX_MEM_mem_write),  // input
-    .dout (dmem_out)        // output
+  // // ---------- Data Memory ----------
+  // DataMemory dmem(
+  //   .reset (reset),      // input
+  //   .clk (clk),        // input
+  //   .addr (EX_MEM_alu_out),       // input
+  //   .din (EX_MEM_dmem_data),        // input
+  //   .mem_read (EX_MEM_mem_read),   // input
+  //   .mem_write (EX_MEM_mem_write),  // input
+  //   .dout (dmem_out)        // output
+  // );
+
+  assign is_input_valid = EX_MEM_mem_read | EX_MEM_mem_write;
+
+  Mux2to1 mem_rw_32_mux (
+      .in0(32'b1),          
+      .in1(32'b0),          
+      .sel(EX_MEM_mem_read),
+      .out(mem_rw_32)
   );
+
+  assign mem_rw = mem_rw_32[0];
+
+  Cache cache(
+    .reset(reset),
+    .clk(clk),
+    .is_input_valid(is_input_valid),
+    .addr(EX_MEM_alu_out),
+    .mem_rw(mem_rw),
+    .din(EX_MEM_dmem_data),
+    .is_ready(is_ready),
+    .is_output_valid(is_output_valid),
+    .dout(dmem_out),
+    .is_hit(is_hit)
+  )
 
   // Update MEM/WB pipeline registers here
   always @(posedge clk) begin
@@ -433,7 +470,7 @@ module cpu(input reset,       // positive reset signal
       MEM_WB_pc_to_reg <= 0;
       MEM_WB_pc <= 0;
     end
-    else begin
+    else if (!cache_stall) begin
       //From ControlUnit
       MEM_WB_mem_to_reg <= EX_MEM_mem_to_reg;
       MEM_WB_reg_write <= EX_MEM_reg_write;
