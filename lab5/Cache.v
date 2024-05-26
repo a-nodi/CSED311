@@ -164,7 +164,7 @@ module Cache #(parameter LINE_SIZE = 16,
       end
     end
 
-    // HIT_CHECK stage
+    // check the current data is in the cache
     else if (current_stage == `HIT_CHECK) begin
 
       if (is_cache_hit) begin // Cache hit
@@ -175,30 +175,39 @@ module Cache #(parameter LINE_SIZE = 16,
           is_write_valid = 1;
           is_write_dirty = 1;
           tag_write_enable = 1;
+          tag_write_tobe_cache = tag_stored;
           data_write_enable = 1;
         end
       end
 
       else begin // Cache miss
         
+        // block that should be replaced is clean. Just replace the block
         if (!is_write_dirty) begin
           data_memory_is_read = 1;
           data_memory_input_is_valid = 1;
-          data_memory_address = addr;
+          data_memory_address = addr << clog2;
           next_stage <= `READ_FROM_MEM;
         end
-
+        
+        // block that should be replaced is dirty. Write back to memory first
         else begin
           data_memory_is_write = 1;
           data_memory_input_is_valid = 1;
-          data_memory_address = {tag_input, addr[`ADDRESS_WIDTH - `CACHE_TAG_WIDTH - 1 : 0]};
+          data_memory_address = {tag_input, addr[`ADDRESS_WIDTH - `CACHE_TAG_WIDTH - 1 : 0]} << clog2;
           data_memory_data_input = data_write_tobe_cache;
           next_stage <= `WRITE_TO_MEM;
         end
       end
     end
 
+    // read data from memory and write to cache
     else if (current_stage == `READ_FROM_MEM) begin
+      tag_write_enable = 1;
+      is_write_valid = 1;
+      tag_write_tobe_cache = tag_stored;
+      is_write_dirty = mem_write;
+
       if (is_data_mem_ready) begin
         data_write_tobe_cache = data_memory_data_output;
         data_write_enable = 1;
@@ -211,6 +220,7 @@ module Cache #(parameter LINE_SIZE = 16,
       end
     end
 
+    // write the dirty block back to memory
     else if (current_stage == `WRITE_TO_MEM) begin
       if (is_data_mem_ready) begin
           data_memory_input_is_valid = 1;
@@ -251,11 +261,8 @@ module Cache #(parameter LINE_SIZE = 16,
         data_read_from_cache = data_stored[127:96];
       end
     endcase
-
-    if (is_cache_hit && mem_write) begin
-      tag_write_tobe_cache = tag_stored;
-    end
   end
+
   // Instantiate data memory
   DataMemory #(.BLOCK_SIZE(LINE_SIZE)) data_mem(
     .reset(reset),
