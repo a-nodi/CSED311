@@ -171,7 +171,7 @@ module cpu(input reset,       // positive reset signal
   end
 
   assign mem_access = EX_MEM_mem_read | EX_MEM_mem_write;
-  assign cache_stall = mem_access & (!is_ready | !is_output_valid | !is_hit)
+  assign cache_stall = mem_access & (!is_ready | !is_output_valid | !is_hit);
 
   // ---------- Update program counter ----------
   // PC must be updated on the rising edge (positive edge) of the clock.
@@ -453,7 +453,7 @@ module cpu(input reset,       // positive reset signal
     .is_output_valid(is_output_valid),
     .dout(dmem_out),
     .is_hit(is_hit)
-  )
+  );
 
   // Update MEM/WB pipeline registers here
   always @(posedge clk) begin
