@@ -20,7 +20,8 @@ module Cache #(parameter LINE_SIZE = 16,
     output is_ready,
     output is_output_valid,
     output [31:0] dout,
-    output is_hit); // OK
+    output is_hit,
+    output is_miss); // OK
 
   // Wire declarations
   wire is_data_mem_ready;
@@ -94,6 +95,7 @@ module Cache #(parameter LINE_SIZE = 16,
   assign is_cache_hit = (is_tag_match && valid_stored); // is cache hit?
   
   assign is_hit = is_cache_hit; // output hit signal
+  assign is_miss = !is_cache_hit;
   assign is_ready = is_data_mem_ready; // output ready signal
   assign is_output_valid = _is_output_valid || data_memory_output_is_valid; // output valid signal
 
