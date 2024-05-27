@@ -30,7 +30,7 @@ module Cache #(parameter LINE_SIZE = 16,
   wire [`CACHE_INDEX_WIDTH - 1:0] index_input;
   wire [`CACHE_OFFSET_WIDTH - 1:0] offset_input;
 
-  wire clog2;
+  wire [3:0] clog2;
 
   // cache storage
   wire [`BLOCK_SIZE * 8 - 1:0] data_stored;
