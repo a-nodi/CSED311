@@ -75,7 +75,7 @@ module Cache #(parameter LINE_SIZE = 16,
   reg data_memory_is_write;
   reg [`BLOCK_SIZE * 8 - 1:0] data_memory_data_output;
 
-
+  reg ways;
 
   integer i;
 
@@ -108,7 +108,7 @@ module Cache #(parameter LINE_SIZE = 16,
       end
       // Initialize stage
       current_stage <= `IDLE;
-      next_stage <= `IDLE;
+      // next_stage <= `IDLE;
     end
 
     else begin // & Move to next stage      
@@ -122,11 +122,9 @@ module Cache #(parameter LINE_SIZE = 16,
         dirty_storage[index_input] <= is_write_dirty;
       end
     
-    
-    
-    
       current_stage <= next_stage;
     end
+    ways <= NUM_WAYS;
   end
 
   /*
@@ -140,100 +138,6 @@ module Cache #(parameter LINE_SIZE = 16,
   4. WRITE_TO_MEM: Write to the memory
 
   */
-
-  always @(*) begin
-    tag_write_tobe_cache = 0;
-    is_write_valid = 0;
-    is_write_dirty = 0;
-    
-    tag_write_enable = 0;
-    data_write_enable = 0;
-
-    data_memory_is_read = 0;
-    data_memory_is_write = 0;
-    data_memory_input_is_valid = 0;
-    
-    // IDLE stage
-    if (current_stage == `IDLE) begin
-      if (is_input_valid) begin // Valid input, have to check the tags
-        next_stage <= `HIT_CHECK;
-      end
-      else begin // Hold the current stage
-        next_stage <= `IDLE;
-      end
-    end
-
-    // check the current data is in the cache
-    else if (current_stage == `HIT_CHECK) begin
-
-      if (is_cache_hit) begin // Cache hit
-        next_stage <= `IDLE;
-
-        // Write directly to cache
-        if (mem_rw) begin
-          is_write_valid = 1;
-          is_write_dirty = 1;
-          tag_write_enable = 1;
-          tag_write_tobe_cache = tag_stored;
-          data_write_enable = 1;
-        end
-      end
-
-      else begin // Cache miss
-        
-        // block that should be replaced is clean. Just replace the block
-        if (!is_write_dirty) begin
-          data_memory_is_read = 1;
-          data_memory_input_is_valid = 1;
-          data_memory_address = addr << clog2;
-          next_stage <= `READ_FROM_MEM;
-        end
-        
-        // block that should be replaced is dirty. Write back to memory first
-        else begin
-          data_memory_is_write = 1;
-          data_memory_input_is_valid = 1;
-          data_memory_address = {tag_input, addr[`ADDRESS_WIDTH - `CACHE_TAG_WIDTH - 1 : 0]} << clog2;
-          data_memory_data_input = data_write_tobe_cache;
-          next_stage <= `WRITE_TO_MEM;
-        end
-      end
-    end
-
-    // read data from memory and write to cache
-    else if (current_stage == `READ_FROM_MEM) begin
-      tag_write_enable = 1;
-      is_write_valid = 1;
-      tag_write_tobe_cache = tag_stored;
-      is_write_dirty = mem_rw;
-
-      if (is_data_mem_ready) begin
-        data_write_tobe_cache = data_memory_data_output;
-        data_write_enable = 1;
-        data_memory_input_is_valid = 0;
-        next_stage <= `HIT_CHECK;
-      end
-
-      else begin
-        next_stage <= `READ_FROM_MEM;
-      end
-    end
-
-    // write the dirty block back to memory
-    else if (current_stage == `WRITE_TO_MEM) begin
-      if (is_data_mem_ready) begin
-          data_memory_input_is_valid = 1;
-          data_memory_is_read = 1;
-          data_memory_is_write = 0;
-          data_memory_address = addr  << clog2;
-          next_stage <= `READ_FROM_MEM;
-      end
-      
-      else begin
-        next_stage <= `WRITE_TO_MEM;
-      end
-    end
-  end
 
   // Assign I/O signals
   always @(*) begin
@@ -260,6 +164,104 @@ module Cache #(parameter LINE_SIZE = 16,
         data_read_from_cache = data_stored[127:96];
       end
     endcase
+  end
+
+  always @(*) begin
+    tag_write_tobe_cache = 0;
+    is_write_valid = 0;
+    is_write_dirty = 0;
+    
+    tag_write_enable = 0;
+    data_write_enable = 0;
+
+    data_memory_is_read = 0;
+    data_memory_is_write = 0;
+    data_memory_input_is_valid = 0;
+    data_memory_address = 0;
+    data_memory_data_input = 0;
+    
+    next_stage = `IDLE;
+
+    // IDLE stage
+    if (current_stage == `IDLE) begin
+      if (is_input_valid) begin // Valid input, have to check the tags
+        next_stage = `HIT_CHECK;
+      end
+      else begin // Hold the current stage
+        next_stage = `IDLE;
+      end
+    end
+
+    // check the current data is in the cache
+    else if (current_stage == `HIT_CHECK) begin
+
+      if (is_cache_hit) begin // Cache hit
+        next_stage = `IDLE;
+
+        // Write directly to cache
+        if (mem_rw) begin
+          is_write_valid = 1;
+          is_write_dirty = 1;
+          tag_write_enable = 1;
+          tag_write_tobe_cache = tag_stored;
+          data_write_enable = 1;
+        end
+      end
+
+      else begin // Cache miss
+        
+        // block that should be replaced is clean. Just replace the block
+        if (!is_write_dirty) begin
+          data_memory_is_read = 1;
+          data_memory_input_is_valid = 1;
+          data_memory_address = addr << clog2;
+          next_stage = `READ_FROM_MEM;
+        end
+        
+        // block that should be replaced is dirty. Write back to memory first
+        else begin
+          data_memory_is_write = 1;
+          data_memory_input_is_valid = 1;
+          data_memory_address = {tag_input, addr[`ADDRESS_WIDTH - `CACHE_TAG_WIDTH - 1 : 0]} << clog2;
+          // data_memory_data_input = data_write_tobe_cache;
+          next_stage = `WRITE_TO_MEM;
+        end
+      end
+    end
+
+    // read data from memory and write to cache
+    else if (current_stage == `READ_FROM_MEM) begin
+      tag_write_enable = 1;
+      is_write_valid = 1;
+      tag_write_tobe_cache = tag_stored;
+      is_write_dirty = mem_rw;
+
+      if (is_data_mem_ready) begin
+        data_write_tobe_cache = data_memory_data_output;
+        data_write_enable = 1;
+        data_memory_input_is_valid = 0;
+        next_stage = `HIT_CHECK;
+      end
+
+      else begin
+        next_stage = `READ_FROM_MEM;
+      end
+    end
+
+    // write the dirty block back to memory
+    else if (current_stage == `WRITE_TO_MEM) begin
+      if (is_data_mem_ready) begin
+          data_memory_input_is_valid = 1;
+          data_memory_is_read = 1;
+          data_memory_is_write = 0;
+          data_memory_address = addr  << clog2;
+          next_stage = `READ_FROM_MEM;
+      end
+      
+      else begin
+        next_stage = `WRITE_TO_MEM;
+      end
+    end
   end
 
   // Instantiate data memory
