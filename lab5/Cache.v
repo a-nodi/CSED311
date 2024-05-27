@@ -14,8 +14,7 @@ module Cache #(parameter LINE_SIZE = 16,
 
     input is_input_valid,
     input [31:0] addr,
-    input mem_read,
-    input mem_write,
+    input mem_rw,
     input [31:0] din,
 
     output is_ready,
@@ -74,7 +73,7 @@ module Cache #(parameter LINE_SIZE = 16,
   reg data_memory_output_is_valid;
   reg data_memory_is_read;
   reg data_memory_is_write;
-  reg data_memory_data_output;
+  reg [`BLOCK_SIZE * 8 - 1:0] data_memory_data_output;
 
 
 
@@ -83,7 +82,7 @@ module Cache #(parameter LINE_SIZE = 16,
   // Assign wires
   assign tag_input = addr[`ADDRESS_WIDTH - 1 : `ADDRESS_WIDTH - `CACHE_TAG_WIDTH];
   assign index_input = addr[`ADDRESS_WIDTH - `CACHE_TAG_WIDTH - 1 : `ADDRESS_WIDTH - `CACHE_TAG_WIDTH - `CACHE_INDEX_WIDTH];
-  assign offset_input = addr[`ADDRESS_WIDTH - `CACHE_TAG_WIDTH - `CACHE_INDEX_WIDTH - 1 : 0];
+  assign offset_input = addr[`CACHE_OFFSET_WIDTH - 1 : 0];
   assign clog2 = `CLOG2(LINE_SIZE);
 
   assign data_stored = data_storage[index_input];
@@ -171,7 +170,7 @@ module Cache #(parameter LINE_SIZE = 16,
         next_stage <= `IDLE;
 
         // Write directly to cache
-        if (mem_write) begin
+        if (mem_rw) begin
           is_write_valid = 1;
           is_write_dirty = 1;
           tag_write_enable = 1;
@@ -206,7 +205,7 @@ module Cache #(parameter LINE_SIZE = 16,
       tag_write_enable = 1;
       is_write_valid = 1;
       tag_write_tobe_cache = tag_stored;
-      is_write_dirty = mem_write;
+      is_write_dirty = mem_rw;
 
       if (is_data_mem_ready) begin
         data_write_tobe_cache = data_memory_data_output;
