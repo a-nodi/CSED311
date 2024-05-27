@@ -79,6 +79,7 @@ module Cache #(parameter LINE_SIZE = 16,
   reg ways;
 
   integer i;
+  // integer j;
 
   // Assign wires
   assign tag_input = addr[`ADDRESS_WIDTH - 1 : `ADDRESS_WIDTH - `CACHE_TAG_WIDTH];
@@ -107,6 +108,7 @@ module Cache #(parameter LINE_SIZE = 16,
         tag_storage[i] <= 0;
         valid_storage[i] <= 0;
         dirty_storage[i] <= 0;
+        
       end
       // Initialize stage
       current_stage <= `IDLE;
@@ -126,6 +128,8 @@ module Cache #(parameter LINE_SIZE = 16,
     
       current_stage <= next_stage;
     end
+    // $display("stage: %d vaild: %d dirty: %d hit: %d tag_match: %d valid_stored: %d tstore: %d tinput: %d twtbc: %d", current_stage, is_write_valid, is_write_dirty, is_cache_hit, is_tag_match, valid_stored, tag_stored, tag_input, tag_write_tobe_cache);
+    //j <= j + 1;
     ways <= NUM_WAYS;
   end
 
@@ -237,7 +241,7 @@ module Cache #(parameter LINE_SIZE = 16,
     else if (current_stage == `READ_FROM_MEM) begin
       tag_write_enable = 1;
       is_write_valid = 1;
-      tag_write_tobe_cache = tag_stored;
+      tag_write_tobe_cache = tag_input;
       is_write_dirty = mem_rw;
 
       if (is_data_mem_ready) begin

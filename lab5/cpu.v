@@ -270,6 +270,7 @@ module cpu(input reset,       // positive reset signal
       IF_ID_BHSR <= BHSR;
       IF_ID_is_flush <= is_flush;
     end
+    // $display("%d", current_pc);
   end
   
   assign mux_rd_din = MEM_WB_pc_to_reg ? MEM_WB_pc + 32'd4 : rd_din;
