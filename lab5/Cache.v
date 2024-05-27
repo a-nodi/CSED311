@@ -142,6 +142,10 @@ module Cache #(parameter LINE_SIZE = 16,
   */
 
   // Assign I/O signals
+  //always @(*) begin
+  
+  //end
+
   always @(*) begin
     data_write_tobe_cache = data_stored;
 
@@ -166,9 +170,7 @@ module Cache #(parameter LINE_SIZE = 16,
         data_read_from_cache = data_stored[127:96];
       end
     endcase
-  end
-
-  always @(*) begin
+  
     tag_write_tobe_cache = 0;
     is_write_valid = 0;
     is_write_dirty = 0;
