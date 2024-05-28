@@ -98,7 +98,9 @@ module Cache #(parameter LINE_SIZE = 16,
   assign is_hit = is_cache_hit; // output hit signal
   assign is_miss = !is_cache_hit;
   assign is_ready = is_data_mem_ready; // output ready signal
-  assign is_output_valid = _is_output_valid || data_memory_output_is_valid; // output valid signal
+  assign is_output_valid = _is_output_valid; // || data_memory_output_is_valid; // output valid signal
+
+  assign dout = data_read_from_cache; // output data
 
   always @(posedge clk) begin
     if (reset) begin
@@ -261,7 +263,7 @@ module Cache #(parameter LINE_SIZE = 16,
       if (is_data_mem_ready) begin
           data_memory_input_is_valid = 1;
           data_memory_is_read = 1;
-          data_memory_is_write = 0;
+          //data_memory_is_write = 0;
           data_memory_address = addr  << clog2;
           next_stage = `READ_FROM_MEM;
       end
