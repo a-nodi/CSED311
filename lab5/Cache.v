@@ -21,7 +21,7 @@ module Cache #(parameter LINE_SIZE = 16,
     output is_output_valid,
     output reg [31:0] dout,
     output reg is_hit,
-    output reg [31:0] number_of_hit,
+    output reg [31:0] number_of_total_access,
     output reg [31:0] number_of_miss
     );
 
@@ -120,7 +120,7 @@ module Cache #(parameter LINE_SIZE = 16,
         dirty_storage[i] <= 0;
       end
 
-      number_of_hit <= 0;
+      number_of_total_access <= 0;
       number_of_miss <= 0;
     end
     
@@ -134,7 +134,7 @@ module Cache #(parameter LINE_SIZE = 16,
       end
 
       if (is_cache_hit && current_stage == `HIT_CHECK) begin
-        number_of_hit <= number_of_hit + 1;
+        number_of_total_access <= number_of_total_access + 1;
       end
       else if (!is_cache_hit && current_stage == `HIT_CHECK) begin
         number_of_miss <= number_of_miss + 1;
