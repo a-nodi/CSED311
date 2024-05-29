@@ -21,8 +21,8 @@ module Cache #(parameter LINE_SIZE = 16,
     output is_output_valid,
     output reg [31:0] dout,
     output reg is_hit,
-    output reg number_of_hit,
-    output reg number_of_miss
+    output reg [31:0] number_of_hit,
+    output reg [31:0] number_of_miss
     );
 
   // Wire declarations
