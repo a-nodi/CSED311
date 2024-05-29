@@ -42,6 +42,7 @@ module Cache #(parameter LINE_SIZE = 16,
 
   wire is_tag_match;
   wire is_cache_hit;
+  wire is_current_storage_dirty;
 
   // Reg declarations
   // You might need registers to keep the status.
@@ -99,6 +100,8 @@ module Cache #(parameter LINE_SIZE = 16,
   assign is_miss = !is_cache_hit;
   assign is_ready = is_data_mem_ready; // output ready signal
   assign is_output_valid = cache_is_output_valid; // || data_memory_output_is_valid; // output valid signal
+
+  assign is_current_storage_dirty = dirty_storage[index_input]; // is the current storage dirty?
 
   assign dout = data_read_from_cache; // output data
 
@@ -222,7 +225,7 @@ module Cache #(parameter LINE_SIZE = 16,
       else begin // Cache miss
         
         // block that should be replaced is clean. Just replace the block
-        if (!is_write_dirty) begin
+        if (!is_current_storage_dirty) begin
           data_memory_is_read = 1;
           data_memory_input_is_valid = 1;
           data_memory_address = addr << clog2;
