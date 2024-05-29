@@ -228,7 +228,7 @@ module Cache #(parameter LINE_SIZE = 16,
         if (!is_current_storage_dirty) begin
           data_memory_is_read = 1;
           data_memory_input_is_valid = 1;
-          data_memory_address = addr << clog2;
+          data_memory_address = addr >> clog2;
           next_stage = `READ_FROM_MEM;
         end
         
@@ -236,7 +236,7 @@ module Cache #(parameter LINE_SIZE = 16,
         else begin
           data_memory_is_write = 1;
           data_memory_input_is_valid = 1;
-          data_memory_address = {tag_input, addr[`ADDRESS_WIDTH - `CACHE_TAG_WIDTH - 1 : 0]} << clog2;
+          data_memory_address = {tag_input, addr[`ADDRESS_WIDTH - `CACHE_TAG_WIDTH - 1 : 0]} >> clog2;
           data_memory_data_input = data_stored;
           next_stage = `WRITE_TO_MEM;
         end
@@ -268,7 +268,7 @@ module Cache #(parameter LINE_SIZE = 16,
           data_memory_input_is_valid = 1;
           data_memory_is_read = 1;
           //data_memory_is_write = 0;
-          data_memory_address = addr  << clog2;
+          data_memory_address = addr >> clog2;
           next_stage = `READ_FROM_MEM;
       end
       
