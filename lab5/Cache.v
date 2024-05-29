@@ -65,7 +65,7 @@ module Cache #(parameter LINE_SIZE = 16,
   reg is_write_dirty;
   reg tag_write_enable;
   reg data_write_enable;
-  reg _is_output_valid;
+  reg cache_is_output_valid;
 
   // Data memory signals
   reg [`ADDRESS_WIDTH - 1:0] data_memory_address;
@@ -98,7 +98,7 @@ module Cache #(parameter LINE_SIZE = 16,
   assign is_hit = is_cache_hit; // output hit signal
   assign is_miss = !is_cache_hit;
   assign is_ready = is_data_mem_ready; // output ready signal
-  assign is_output_valid = _is_output_valid; // || data_memory_output_is_valid; // output valid signal
+  assign is_output_valid = cache_is_output_valid; // || data_memory_output_is_valid; // output valid signal
 
   assign dout = data_read_from_cache; // output data
 
@@ -189,11 +189,12 @@ module Cache #(parameter LINE_SIZE = 16,
     data_memory_input_is_valid = 0;
     data_memory_address = 0;
     data_memory_data_input = 0;
-    
+    cache_is_output_valid = 0;
     next_stage = `IDLE;
 
     // IDLE stage
     if (current_stage == `IDLE) begin
+      cache_is_output_valid = 1;
       if (is_input_valid) begin // Valid input, have to check the tags
         next_stage = `HIT_CHECK;
       end
@@ -207,7 +208,7 @@ module Cache #(parameter LINE_SIZE = 16,
 
       if (is_cache_hit) begin // Cache hit
         next_stage = `IDLE;
-
+        cache_is_output_valid = 1;
         // Write directly to cache
         if (mem_rw) begin
           is_write_valid = 1;
@@ -233,7 +234,7 @@ module Cache #(parameter LINE_SIZE = 16,
           data_memory_is_write = 1;
           data_memory_input_is_valid = 1;
           data_memory_address = {tag_input, addr[`ADDRESS_WIDTH - `CACHE_TAG_WIDTH - 1 : 0]} << clog2;
-          // data_memory_data_input = data_write_tobe_cache;
+          data_memory_data_input = data_stored;
           next_stage = `WRITE_TO_MEM;
         end
       end
@@ -249,7 +250,7 @@ module Cache #(parameter LINE_SIZE = 16,
       if (is_data_mem_ready) begin
         data_write_tobe_cache = data_memory_data_output;
         data_write_enable = 1;
-        data_memory_input_is_valid = 0;
+        // data_memory_input_is_valid = 0;
         next_stage = `HIT_CHECK;
       end
 
