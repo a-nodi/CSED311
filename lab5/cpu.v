@@ -12,7 +12,7 @@ module cpu(input reset,       // positive reset signal
            input clk,         // clock signal
            output is_halted, // Whehther to finish simulation
            output [31:0]print_reg[0:31], // Whehther to finish simulation
-           output [31:0]number_of_hit,
+           output [31:0]number_of_total_access,
            output [31:0]number_of_miss);
   /***** Wire declarations *****/
   //PC
@@ -458,7 +458,7 @@ module cpu(input reset,       // positive reset signal
     .is_output_valid(is_output_valid),
     .dout(dmem_out),
     .is_hit(is_hit),
-    .number_of_hit(number_of_hit),
+    .number_of_total_access(number_of_total_access),
     .number_of_miss(number_of_miss)
   );
 

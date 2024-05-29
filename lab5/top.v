@@ -5,7 +5,7 @@ module top(input reset,
            input clk,
            output is_halted,
            output [31:0] print_reg [0:31],
-           output [31:0]number_of_hit,
+           output [31:0]number_of_total_access,
            output [31:0]number_of_miss);
 
   cpu cpu(
@@ -13,7 +13,7 @@ module top(input reset,
     .clk(clk),
     .is_halted(is_halted),
     .print_reg(print_reg),
-    .number_of_hit(number_of_hit),
+    .number_of_total_access(number_of_total_access),
     .number_of_miss(number_of_miss)
   );
 

@@ -32,7 +32,7 @@ int main(int argc, char **argv, char **env)
     // TO DO : CHANGE "filename" TO PROVIDED "answer_*.txt" PATH
     string filename = "./student_tb/naive_ripes_result.txt";
     // string filename = "./student_tb/opt_ripes_result.txt";
-    // string filename = "./student_tb/answer_basic.txt";
+    //  string filename = "./student_tb/answer_basic.txt";
     ifstream file(filename);
     stringstream ss;
     string reg_hex;
@@ -78,7 +78,7 @@ int main(int argc, char **argv, char **env)
         //     miss_count++;
     }
 
-    hit_count = dut->number_of_hit;
+    hit_count = dut->number_of_total_access - dut->number_of_miss;
     miss_count = dut->number_of_miss;
 
     int answer_cycle;
