@@ -124,7 +124,7 @@ module Cache #(parameter LINE_SIZE = 16,
       number_of_miss <= 0;
     end
     
-    // Update cache
+    // Write cache data
     else begin
       if(write_enable) begin
           data_storage[index_input] <= temp_data;
@@ -167,7 +167,7 @@ module Cache #(parameter LINE_SIZE = 16,
     // Next stage set (error handling)
     next_stage = `IDLE;
 
-    // Update cache block
+    // Always Update cache I/O signals
     case (offset_input)
       2'b00: begin
         temp_data = {block3, block2, block1, din};
@@ -187,6 +187,32 @@ module Cache #(parameter LINE_SIZE = 16,
       end
     endcase
 
+    /*
+    FSM design
+
+    1. IDLE stage
+      - Check if the cache is ready to accept request
+      - If ready, move to HIT_CHECK stage
+      - If not ready, stay in IDLE stage
+
+    2. HIT_CHECK stage
+      - Check if the cache hit
+      - If cache hit, move to IDLE stage
+      - If cache miss, 
+        - move to WRITE_TO_MEM stage if current cache line is dirty
+        - READ_FROM_MEM stage if current cache line is clean
+
+    3. WRITE_TO_MEM stage
+      - Write dirty cache line to memory
+      - Move to READ_FROM_MEM stage
+    
+    4. READ_FROM_MEM stage
+      - Read data from memory to cache
+      - Move to HIT_CHECK stage
+
+    */
+
+
     // Idle
     if(current_stage == `IDLE) begin
       next_stage = is_input_valid ? `HIT_CHECK : `IDLE;
@@ -197,7 +223,7 @@ module Cache #(parameter LINE_SIZE = 16,
       if (is_cache_hit) begin // Cache hit
         number_of_hit = number_of_hit + 1;
         if(mem_rw) begin // Write to cache
-          // Toggle cache signals
+          // Toggle cache control signals
           write_enable = 1;
           is_write_valid = 1;
           is_write_dirty = 1;
@@ -235,10 +261,13 @@ module Cache #(parameter LINE_SIZE = 16,
         data_memory_mem_write =0;
 
       if (data_memory_is_output_valid) begin
+        // Toggle cache control signals
         write_enable = 1;
-        temp_data = data_memory_dout;
         is_write_valid = 1;
         is_write_dirty = 0;
+        
+        // Temporarily store data to be written to cache
+        temp_data = data_memory_dout;
       end
 
         next_stage = data_memory_is_output_valid ? `HIT_CHECK : `READ_FROM_MEM;
