@@ -132,6 +132,14 @@ module Cache #(parameter LINE_SIZE = 16,
           valid_storage[index_input] <= is_write_valid;
           dirty_storage[index_input] <= is_write_dirty;
       end
+
+      if (is_cache_hit && current_stage == `HIT_CHECK) begin
+        number_of_hit <= number_of_hit + 1;
+      end
+      else if (!is_cache_hit && current_stage == `HIT_CHECK) begin
+        number_of_miss <= number_of_miss + 1;
+      end
+
     end
 
     // Move to next stage
@@ -212,7 +220,6 @@ module Cache #(parameter LINE_SIZE = 16,
 
     */
 
-
     // Idle
     if(current_stage == `IDLE) begin
       next_stage = is_input_valid ? `HIT_CHECK : `IDLE;
@@ -221,7 +228,6 @@ module Cache #(parameter LINE_SIZE = 16,
     // Check if the cache hit
     else if (current_stage == `HIT_CHECK) begin
       if (is_cache_hit) begin // Cache hit
-        number_of_hit = number_of_hit + 1;
         if(mem_rw) begin // Write to cache
           // Toggle cache control signals
           write_enable = 1;
@@ -232,7 +238,6 @@ module Cache #(parameter LINE_SIZE = 16,
         next_stage = `IDLE;
       end
       else begin // Cache miss
-        number_of_miss = number_of_miss + 1;
         next_stage = dirty_stored ? `WRITE_TO_MEM : `READ_FROM_MEM;
       end
     end
