@@ -72,11 +72,14 @@ int main(int argc, char **argv, char **env)
         next_cycle(dut, m_trace);
         if (dut->is_halted == 1)
             break;
-        if (dut->is_hit == 1)
-            hit_count++;
-        if (dut->is_miss == 1)
-            miss_count++;
+        // if (dut->is_hit == 1)
+        //     hit_count++;
+        // if (dut->is_miss == 1)
+        //     miss_count++;
     }
+
+    hit_count = number_of_hit;
+    miss_count = number_of_miss;
 
     int answer_cycle;
     string answer_reg;
@@ -90,8 +93,8 @@ int main(int argc, char **argv, char **env)
 
     // Print your Hit ratio
     cout << endl;
-    cout << "TOTAL HIT : " << hit_count << endl;
-    cout << "TOTAL MISS : " << miss_count << endl;
+    cout << "TOTAL HIT : " << number_of_hit << endl;
+    cout << "TOTAL MISS : " << number_of_miss << endl;
     cout << "HIT RATIO : " << static_cast<double>(hit_count) / (hit_count + miss_count) << endl;
 
     for (int i = 0; i < 32; i = i + 1)

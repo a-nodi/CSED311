@@ -12,8 +12,8 @@ module cpu(input reset,       // positive reset signal
            input clk,         // clock signal
            output is_halted, // Whehther to finish simulation
            output [31:0]print_reg[0:31], // Whehther to finish simulation
-           output is_hit,
-           output is_miss);
+           output [31:0]number_of_hit,
+           output [31:0]number_of_miss);
   /***** Wire declarations *****/
   //PC
   wire [31:0] current_pc;
@@ -81,7 +81,7 @@ module cpu(input reset,       // positive reset signal
   wire mem_rw;
   wire is_ready;
   wire is_output_valid;
-  // wire is_hit;
+  wire is_hit;
   // wire is_miss;
   wire mem_access;
   wire cache_stall;
@@ -458,8 +458,8 @@ module cpu(input reset,       // positive reset signal
     .is_output_valid(is_output_valid),
     .dout(dmem_out),
     .is_hit(is_hit),
-    .number_of_hit(),
-    .number_of_miss()
+    .number_of_hit(number_of_hit),
+    .number_of_miss(number_of_miss)
   );
 
   // Update MEM/WB pipeline registers here
