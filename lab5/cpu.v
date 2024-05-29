@@ -457,8 +457,9 @@ module cpu(input reset,       // positive reset signal
     .is_ready(is_ready),
     .is_output_valid(is_output_valid),
     .dout(dmem_out),
-    .is_hit(is_hit)
-    // .is_miss(is_miss)
+    .is_hit(is_hit),
+    .number_of_hit(),
+    .number_of_miss()
   );
 
   // Update MEM/WB pipeline registers here

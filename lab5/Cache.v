@@ -20,7 +20,10 @@ module Cache #(parameter LINE_SIZE = 16,
     output is_ready,
     output is_output_valid,
     output reg [31:0] dout,
-    output reg is_hit);
+    output reg is_hit,
+    output reg number_of_hit,
+    output reg number_of_miss
+    );
 
   // Wire declarations
   // Cache input 
@@ -116,6 +119,9 @@ module Cache #(parameter LINE_SIZE = 16,
         valid_storage[i] <= 0;
         dirty_storage[i] <= 0;
       end
+
+      number_of_hit <= 0;
+      number_of_miss <= 0;
     end
     
     // Update cache
@@ -181,7 +187,7 @@ module Cache #(parameter LINE_SIZE = 16,
       end
     endcase
 
-    // Idle stage
+    // Idle
     if(current_stage == `IDLE) begin
       next_stage = is_input_valid ? `HIT_CHECK : `IDLE;
     end
@@ -189,7 +195,9 @@ module Cache #(parameter LINE_SIZE = 16,
     // Check if the cache hit
     else if (current_stage == `HIT_CHECK) begin
       if (is_cache_hit) begin // Cache hit
+        number_of_hit = number_of_hit + 1;
         if(mem_rw) begin // Write to cache
+          // Toggle cache signals
           write_enable = 1;
           is_write_valid = 1;
           is_write_dirty = 1;
@@ -198,43 +206,42 @@ module Cache #(parameter LINE_SIZE = 16,
         next_stage = `IDLE;
       end
       else begin // Cache miss
-          next_stage = dirty_stored ? `WRITE_TO_MEM : `READ_FROM_MEM;
+        number_of_miss = number_of_miss + 1;
+        next_stage = dirty_stored ? `WRITE_TO_MEM : `READ_FROM_MEM;
       end
     end
 
+    // Write dirty cache line to memory
     else if (current_stage == `WRITE_TO_MEM) begin
       // Write dirty cache line to memory
       if (is_data_mem_ready) begin
-        data_memory_addr = {tag_storage[index_input], index_input, 4'b0000} >> clog2;
+        // Toggle data memory signals
         data_memory_is_input_valid = 1;
-        data_memory_mem_write = 1;
+        data_memory_addr = {tag_storage[index_input], index_input, 4'b0000} >> clog2;
         data_memory_mem_read = 0;
+        data_memory_mem_write = 1;
         data_memory_din = data_storage[index_input];
-        next_stage = `READ_FROM_MEM;
       end
-      else begin
-        next_stage =`WRITE_TO_MEM;
-      end
+      
+      next_stage = is_data_mem_ready ? `READ_FROM_MEM : `WRITE_TO_MEM;
     end
 
+    // Read data from memory to cache
     else if (current_stage == `READ_FROM_MEM) begin
+        // Toggle data memory signals
+        data_memory_is_input_valid = data_memory_is_output_valid ? 0 : 1;
+        data_memory_addr = addr >> clog2;
         data_memory_mem_read =1;
         data_memory_mem_write =0;
-        data_memory_addr = addr >> clog2;
-        data_memory_is_input_valid = 1;
 
       if (data_memory_is_output_valid) begin
         write_enable = 1;
         temp_data = data_memory_dout;
         is_write_valid = 1;
         is_write_dirty = 0;
-        data_memory_is_input_valid = 0;
-        next_stage = `HIT_CHECK;
       end
 
-      else begin
-        next_stage =`READ_FROM_MEM;
-      end
+        next_stage = data_memory_is_output_valid ? `HIT_CHECK : `READ_FROM_MEM;
     end
   end
 
