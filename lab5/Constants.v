@@ -13,6 +13,7 @@
 `define CACHE_OFFSET_WIDTH 2
 `define BLOCK_SIZE 16
 
+
 // Address : [31:7] [6:2] [1:0]
 //            tag  index  offset
 

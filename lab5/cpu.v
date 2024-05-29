@@ -226,6 +226,7 @@ module cpu(input reset,       // positive reset signal
         3'b001: correct_pc = pc_imm; // For taken branches, use PC + immediate
         default: correct_pc = ID_EX_pc + 32'd4; // Otherwise, use PC + 4
     endcase
+    // is_miss = 1'b0;
   end
 
   // Check if the branch prediction was correct or not
@@ -456,8 +457,8 @@ module cpu(input reset,       // positive reset signal
     .is_ready(is_ready),
     .is_output_valid(is_output_valid),
     .dout(dmem_out),
-    .is_hit(is_hit),
-    .is_miss(is_miss)
+    .is_hit(is_hit)
+    // .is_miss(is_miss)
   );
 
   // Update MEM/WB pipeline registers here

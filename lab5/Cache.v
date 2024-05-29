@@ -3,8 +3,8 @@
 
 `define IDLE 2'b00
 `define HIT_CHECK 2'b01
-`define READ_FROM_MEM 2'b10
-`define WRITE_TO_MEM 2'b11
+`define WRITE_TO_MEM 2'b10
+`define READ_FROM_MEM 2'b11
 
 module Cache #(parameter LINE_SIZE = 16,
                parameter NUM_SETS = `CACHE_NUM_SETS,
@@ -13,267 +13,227 @@ module Cache #(parameter LINE_SIZE = 16,
     input clk,
 
     input is_input_valid,
-    input [31:0] addr,
+    input [`ADDRESS_WIDTH - 1:0] addr,
     input mem_rw,
-    input [31:0] din,
+    input [`DATA_WIDTH - 1:0] din,
 
     output is_ready,
     output is_output_valid,
-    output [31:0] dout,
-    output is_hit,
-    output is_miss); // OK
+    output reg [31:0] dout,
+    output reg is_hit);
 
   // Wire declarations
-  wire is_data_mem_ready;
-
-  // Input signals
-  wire [`CACHE_TAG_WIDTH - 1:0] tag_input;
+  // Cache input 
   wire [`CACHE_INDEX_WIDTH - 1:0] index_input;
   wire [`CACHE_OFFSET_WIDTH - 1:0] offset_input;
+  wire [`CACHE_TAG_WIDTH - 1:0] tag_input;
 
-  wire [3:0] clog2;
-
-  // cache storage
-  wire [`BLOCK_SIZE * 8 - 1:0] data_stored;
+  // Cache output
+  wire [8 * `BLOCK_SIZE - 1:0] data_stored;
   wire [`CACHE_TAG_WIDTH - 1:0] tag_stored;
   wire valid_stored;
   wire dirty_stored;
+  wire [2 * `BLOCK_SIZE - 1:0] block0;
+  wire [2 * `BLOCK_SIZE - 1:0] block1;
+  wire [2 * `BLOCK_SIZE - 1:0] block2;
+  wire [2 * `BLOCK_SIZE - 1:0] block3;
 
-
-  wire is_tag_match;
+  // Cache control signals
+  wire is_tag_matched;
   wire is_cache_hit;
-  wire is_current_storage_dirty;
+
+  // Data memory signal
+  wire is_data_mem_ready;
+
+  // Misc
+  wire [3:0] clog2;
 
   // Reg declarations
-  // You might need registers to keep the status.
-  reg [`BLOCK_SIZE * 8 - 1:0] data_storage [0:NUM_SETS-1];
-  reg [`CACHE_TAG_WIDTH - 1:0] tag_storage [0:NUM_SETS-1];
-  reg [0:0] valid_storage [0:NUM_SETS-1];
-  reg [0:0] dirty_storage [0:NUM_SETS-1];
-  
-  // Stage of the FSM
-  reg [1:0] current_stage;
-  reg [1:0] next_stage;
+  // Cache data
+  reg [8 * `BLOCK_SIZE - 1:0] data_storage [NUM_SETS - 1:0]; 
+  reg [`CACHE_TAG_WIDTH - 1:0] tag_storage [NUM_SETS - 1:0]; 
+  reg valid_storage [NUM_SETS - 1:0];
+  reg dirty_storage [NUM_SETS - 1:0];
 
-  // Temporary storage
-  reg [`CACHE_TAG_WIDTH - 1:0] tag_write_tobe_cache;
-  reg [`CACHE_TAG_WIDTH - 1:0] tag_read_from_cache;
-  reg [`BLOCK_SIZE * 8 - 1:0] data_write_tobe_cache;
-  reg [`DATA_WIDTH - 1:0] data_read_from_cache;
+  // Cache working stage
+  reg[1:0] current_stage;
+  reg[1:0] next_stage;
 
-  // Write signals
-  reg is_write_valid;
+  // Cache input signals
   reg is_write_dirty;
-  reg tag_write_enable;
-  reg data_write_enable;
-  reg cache_is_output_valid;
+  reg is_write_valid;
 
+  // Cache control signal
+  reg write_enable;
+  
   // Data memory signals
-  reg [`ADDRESS_WIDTH - 1:0] data_memory_address;
-  reg [`BLOCK_SIZE * 8 - 1:0] data_memory_data_input;
-  reg data_memory_input_is_valid;
-  reg data_memory_output_is_valid;
-  reg data_memory_is_read;
-  reg data_memory_is_write;
-  reg [`BLOCK_SIZE * 8 - 1:0] data_memory_data_output;
+  reg data_memory_is_input_valid;
+  reg [`ADDRESS_WIDTH - 1:0] data_memory_addr;
+  reg data_memory_mem_read;
+  reg data_memory_mem_write;
+  reg [`BLOCK_SIZE * 8 - 1:0] data_memory_din;
+  reg data_memory_is_output_valid;
+  reg [`BLOCK_SIZE * 8 - 1:0] data_memory_dout;   
+  // wire is_data_mem_ready;
+  reg [`BLOCK_SIZE * 8 - 1:0] temp_data;
 
+  // Misc
   reg ways;
-
   integer i;
-  // integer j;
 
-  // Assign wires
-  assign tag_input = addr[`ADDRESS_WIDTH - 1 : `ADDRESS_WIDTH - `CACHE_TAG_WIDTH];
+  // Cache input
   assign index_input = addr[`ADDRESS_WIDTH - `CACHE_TAG_WIDTH - 1 : `ADDRESS_WIDTH - `CACHE_TAG_WIDTH - `CACHE_INDEX_WIDTH];
-  assign offset_input = addr[`CACHE_OFFSET_WIDTH - 1 : 0];
-  assign clog2 = `CLOG2(LINE_SIZE);
+  assign offset_input = addr[`ADDRESS_WIDTH - `CACHE_TAG_WIDTH - `CACHE_INDEX_WIDTH - 1 : `ADDRESS_WIDTH - `CACHE_TAG_WIDTH - `CACHE_INDEX_WIDTH - `CACHE_OFFSET_WIDTH];
+  assign tag_input = addr[`ADDRESS_WIDTH - 1 : `ADDRESS_WIDTH - `CACHE_TAG_WIDTH];
 
+  // Module output signals
+  assign is_ready = is_data_mem_ready;
+  assign is_output_valid = (next_stage == `IDLE) ? 1 : 0;
+
+  // Cache output
   assign data_stored = data_storage[index_input];
   assign tag_stored = tag_storage[index_input];
   assign valid_stored = valid_storage[index_input];
   assign dirty_stored = dirty_storage[index_input];
+  assign block0 = data_stored[2 * `BLOCK_SIZE - 1:0];
+  assign block1 = data_stored[4 * `BLOCK_SIZE - 1:2 * `BLOCK_SIZE];
+  assign block2 = data_stored[6 * `BLOCK_SIZE - 1:4 * `BLOCK_SIZE];
+  assign block3 = data_stored[8 * `BLOCK_SIZE - 1:6 * `BLOCK_SIZE];
 
-  assign is_tag_match = (tag_stored == tag_input); // Compare tag is matched
-  assign is_cache_hit = (is_tag_match && valid_stored); // is cache hit?
-  
-  assign is_hit = is_cache_hit; // output hit signal
-  assign is_miss = !is_cache_hit;
-  assign is_ready = is_data_mem_ready; // output ready signal
-  assign is_output_valid = cache_is_output_valid; // || data_memory_output_is_valid; // output valid signal
+  // Cache control signals
+  assign is_tag_matched = (tag_input == tag_stored) ? 1 : 0;  
+  assign is_cache_hit = (valid_stored && is_tag_matched) ? 1 : 0;
 
-  assign is_current_storage_dirty = dirty_storage[index_input]; // is the current storage dirty?
-
-  assign dout = data_read_from_cache; // output data
+  // Misc
+  assign clog2 = `CLOG2(LINE_SIZE);
 
   always @(posedge clk) begin
-    if (reset) begin
-      // Initialize data storage
-      for (i = 0; i < NUM_SETS; i = i + 1) begin
+    // Initialize cache
+    if(reset) begin
+      for(i = 0; i < NUM_SETS; i = i + 1) begin
         data_storage[i] <= 0;
         tag_storage[i] <= 0;
         valid_storage[i] <= 0;
         dirty_storage[i] <= 0;
-        
       end
-      // Initialize stage
-      current_stage <= `IDLE;
-      // next_stage <= `IDLE;
+    end
+    
+    // Update cache
+    else begin
+      if(write_enable) begin
+          data_storage[index_input] <= temp_data;
+          tag_storage[index_input] <= tag_input;
+          valid_storage[index_input] <= is_write_valid;
+          dirty_storage[index_input] <= is_write_dirty;
+      end
     end
 
-    else begin // & Move to next stage      
-      if (data_write_enable) begin
-        data_storage[index_input] <= data_write_tobe_cache;
-      end
-    
-      if (tag_write_enable) begin
-        tag_storage[index_input] <= tag_write_tobe_cache;
-        valid_storage[index_input] <= is_write_valid;
-        dirty_storage[index_input] <= is_write_dirty;
-      end
-    
-      current_stage <= next_stage;
-    end
-    // $display("stage: %d vaild: %d dirty: %d hit: %d tag_match: %d valid_stored: %d tstore: %d tinput: %d twtbc: %d", current_stage, is_write_valid, is_write_dirty, is_cache_hit, is_tag_match, valid_stored, tag_stored, tag_input, tag_write_tobe_cache);
-    //j <= j + 1;
-    ways <= NUM_WAYS;
+    // Move to next stage
+    current_stage <= reset ? `IDLE : next_stage;
   end
 
-  /*
-  FSM description
-  1. IDLE: Wait for the input valid signal
-  
-  2. HIT_CHECK: Check if the cache hit
-  
-  3. READ_FROM_MEM: Read from the memory
-  
-  4. WRITE_TO_MEM: Write to the memory
-
-  */
-
-  // Assign I/O signals
-  //always @(*) begin
-  
-  //end
-
   always @(*) begin
-    data_write_tobe_cache = data_stored;
-
-    case(offset_input)
-      2'b00: begin
-        data_write_tobe_cache[31:0] = din;
-        data_read_from_cache = data_stored[31:0];
-      end
-
-      2'b01: begin
-        data_write_tobe_cache[63:32] = din;
-        data_read_from_cache = data_stored[63:32];
-      end
-
-      2'b10: begin
-        data_write_tobe_cache[95:64] = din;
-        data_read_from_cache = data_stored[95:64];
-      end
-
-      2'b11: begin
-        data_write_tobe_cache[127:96] = din;
-        data_read_from_cache = data_stored[127:96];
-      end
-    endcase
-  
-    tag_write_tobe_cache = 0;
+    
+    // Cache input signals
+    write_enable = 0;
     is_write_valid = 0;
     is_write_dirty = 0;
-    
-    tag_write_enable = 0;
-    data_write_enable = 0;
 
-    data_memory_is_read = 0;
-    data_memory_is_write = 0;
-    data_memory_input_is_valid = 0;
-    data_memory_address = 0;
-    data_memory_data_input = 0;
-    cache_is_output_valid = 0;
+    // Module output
+    dout = 0;
+
+    // Module output signals
+    is_hit = is_cache_hit ? 1 : 0;
+
+    // Data memory signals
+    data_memory_is_input_valid = 0;
+    data_memory_addr = 0;
+    data_memory_mem_read = 0;
+    data_memory_mem_write = 0;
+    data_memory_din = 0;
+
+    // Cache input signals
+    temp_data = 0;
+    
+    // Misc
+    ways = NUM_WAYS;
+
+    // Next stage set (error handling)
     next_stage = `IDLE;
 
-    // IDLE stage
-    if (current_stage == `IDLE) begin
-      cache_is_output_valid = 1;
-      if (is_input_valid) begin // Valid input, have to check the tags
-        next_stage = `HIT_CHECK;
+    // Update cache block
+    case (offset_input)
+      2'b00: begin
+        temp_data = {block3, block2, block1, din};
+        dout = data_storage[index_input][2 * `BLOCK_SIZE - 1: 0];
       end
-      else begin // Hold the current stage
-        next_stage = `IDLE;
+      2'b01: begin
+        temp_data = {block3, block2, din, block0};
+        dout = data_storage[index_input][4 * `BLOCK_SIZE - 1: 2 * `BLOCK_SIZE];
       end
+      2'b10: begin
+        temp_data = {block3, din, block1, block0};
+        dout = data_storage[index_input][6 * `BLOCK_SIZE - 1: 4 * `BLOCK_SIZE];
+      end
+      2'b11: begin
+        temp_data = {din, block2, block1, block0};
+        dout = data_storage[index_input][8 * `BLOCK_SIZE - 1: 6 * `BLOCK_SIZE];
+      end
+    endcase
+
+    // Idle stage
+    if(current_stage == `IDLE) begin
+      next_stage = is_input_valid ? `HIT_CHECK : `IDLE;
     end
 
-    // check the current data is in the cache
+    // Check if the cache hit
     else if (current_stage == `HIT_CHECK) begin
-
       if (is_cache_hit) begin // Cache hit
-        next_stage = `IDLE;
-        cache_is_output_valid = 1;
-        // Write directly to cache
-        if (mem_rw) begin
+        if(mem_rw) begin // Write to cache
+          write_enable = 1;
           is_write_valid = 1;
           is_write_dirty = 1;
-          tag_write_enable = 1;
-          tag_write_tobe_cache = tag_stored;
-          data_write_enable = 1;
         end
-      end
 
+        next_stage = `IDLE;
+      end
       else begin // Cache miss
-        
-        // block that should be replaced is clean. Just replace the block
-        if (!is_current_storage_dirty) begin
-          data_memory_is_read = 1;
-          data_memory_input_is_valid = 1;
-          data_memory_address = addr >> clog2;
-          next_stage = `READ_FROM_MEM;
-        end
-        
-        // block that should be replaced is dirty. Write back to memory first
-        else begin
-          data_memory_is_write = 1;
-          data_memory_input_is_valid = 1;
-          data_memory_address = {tag_input, addr[`ADDRESS_WIDTH - `CACHE_TAG_WIDTH - 1 : 0]} >> clog2;
-          data_memory_data_input = data_stored;
-          next_stage = `WRITE_TO_MEM;
-        end
+          next_stage = dirty_stored ? `WRITE_TO_MEM : `READ_FROM_MEM;
       end
     end
 
-    // read data from memory and write to cache
-    else if (current_stage == `READ_FROM_MEM) begin
-      tag_write_enable = 1;
-      is_write_valid = 1;
-      tag_write_tobe_cache = tag_input;
-      is_write_dirty = mem_rw;
-
+    else if (current_stage == `WRITE_TO_MEM) begin
+      // Write dirty cache line to memory
       if (is_data_mem_ready) begin
-        data_write_tobe_cache = data_memory_data_output;
-        data_write_enable = 1;
-        // data_memory_input_is_valid = 0;
+        data_memory_addr = {tag_storage[index_input], index_input, 4'b0000} >> clog2;
+        data_memory_is_input_valid = 1;
+        data_memory_mem_write = 1;
+        data_memory_mem_read = 0;
+        data_memory_din = data_storage[index_input];
+        next_stage = `READ_FROM_MEM;
+      end
+      else begin
+        next_stage =`WRITE_TO_MEM;
+      end
+    end
+
+    else if (current_stage == `READ_FROM_MEM) begin
+        data_memory_mem_read =1;
+        data_memory_mem_write =0;
+        data_memory_addr = addr >> clog2;
+        data_memory_is_input_valid = 1;
+
+      if (data_memory_is_output_valid) begin
+        write_enable = 1;
+        temp_data = data_memory_dout;
+        is_write_valid = 1;
+        is_write_dirty = 0;
+        data_memory_is_input_valid = 0;
         next_stage = `HIT_CHECK;
       end
 
       else begin
-        next_stage = `READ_FROM_MEM;
-      end
-    end
-
-    // write the dirty block back to memory
-    else if (current_stage == `WRITE_TO_MEM) begin
-      if (is_data_mem_ready) begin
-          data_memory_input_is_valid = 1;
-          data_memory_is_read = 1;
-          //data_memory_is_write = 0;
-          data_memory_address = addr >> clog2;
-          next_stage = `READ_FROM_MEM;
-      end
-      
-      else begin
-        next_stage = `WRITE_TO_MEM;
+        next_stage =`READ_FROM_MEM;
       end
     end
   end
@@ -282,16 +242,14 @@ module Cache #(parameter LINE_SIZE = 16,
   DataMemory #(.BLOCK_SIZE(LINE_SIZE)) data_mem(
     .reset(reset),
     .clk(clk),
-
-    .is_input_valid(data_memory_input_is_valid),
-    .addr(data_memory_address),        // NOTE: address must be shifted by CLOG2(LINE_SIZE)
-    .mem_read(data_memory_is_read),
-    .mem_write(data_memory_is_write),
-    .din(data_memory_data_input),
-
+    .is_input_valid(data_memory_is_input_valid),
+    .addr(data_memory_addr),        // NOTE: address must be shifted by CLOG2(LINE_SIZE)
+    .mem_read(data_memory_mem_read),
+    .mem_write(data_memory_mem_write),
+    .din(data_memory_din),
     // is output from the data memory valid?
-    .is_output_valid(data_memory_output_is_valid),
-    .dout(data_memory_data_output),
+    .is_output_valid(data_memory_is_output_valid),
+    .dout(data_memory_dout),
     // is data memory ready to accept request?
     .mem_ready(is_data_mem_ready)
   );
