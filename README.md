@@ -1,2 +1,2 @@
-2024-Spring CSED311 Lab
-=======================
+POSTECH CSED311 Computer Architecture (2024 Spring) Programming Labs
+====================================================================
